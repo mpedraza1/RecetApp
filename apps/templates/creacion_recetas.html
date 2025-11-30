@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<link rel="stylesheet" href="{% static 'apps/css/style.css' %}">
+<div class="contenedor-central">
+
+    <!-- Nombre de receta -->
+    <label class="campo" >
+        <strong>Nombre de la receta:</strong><br>
+        <input type="text" placeholder="Ingrese el nombre de la nueva receta">
+    </label>
+
+    <!-- Título ingredientes -->
+    <strong>Ingresar ingredientes </strong>
+
+    <!-- Bloque de ingrediente (ejemplo inicial) -->
+    <div id="ingredientes-container">
+
+    <!-- Bloque de ingrediente (ejemplo inicial) -->
+    <div class="ingrediente">
+        <select class="ingrediente-select">
+            {% for ingrediente in ingredientes %}
+                <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+            {% endfor %}
+        </select>
+        <input class="cantidad" type="number" placeholder="Cantidad"  >
+        <select class="select-unidad">
+            <option>gr</option>
+            <option>ml</option>
+        </select>
+        <button type="button" class="boton-mas">+</button>
+    </div>
+
+</div>
+
+    <!-- Botón Guardar -->
+    <button class="guardar">Guardar</button>
+
+</div>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ingredientesContainer = document.getElementById('ingredientes-container');
+
+    ingredientesContainer.addEventListener('click', function(event){
+        if(event.target.classList.contains('boton-mas')){
+            // Bloque que contiene el botón +
+            const bloque = event.target.parentElement;
+            const nuevoBloque = bloque.cloneNode(true);
+
+            // Limpiamos los valores del nuevo bloque
+            nuevoBloque.querySelector('.cantidad').value = '';
+            nuevoBloque.querySelector('.ingrediente-select').selectedIndex = 0;
+            nuevoBloque.querySelector('.select-unidad').selectedIndex = 0;
+
+            // Agregamos el nuevo bloque al contenedor
+            ingredientesContainer.appendChild(nuevoBloque);
+        }
+    });
+});
+</script>
+
+{% endblock %}

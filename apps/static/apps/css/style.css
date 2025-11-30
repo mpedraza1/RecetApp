@@ -1,0 +1,78 @@
+    .contenedor-central {
+        width: 80%;
+        margin: -400px auto;
+        background: #8f8b8ba4;
+        padding: 20px;
+        border-radius: 10px;
+        box-sizing: border-box;
+        min-height: 400px;
+        position: relative;
+
+    }
+
+    .campo {
+        display: block;
+        margin-bottom: 20px;
+
+    }
+
+    .campo input {
+        width: 60%;
+        padding: 10px;
+        border-radius: 8px;
+        border: none;
+        font-size: 14px;
+    }
+
+    .ingrediente {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+        gap: 10px;
+
+
+    }
+
+    .ingrediente input {
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+        
+    }
+    .ingrediente-select {
+        width: 150px; 
+        padding: 9px; 
+        border-radius: 6px;  
+
+    }
+    .cantidad{
+        width: 150px;
+    }
+
+    .boton-mas {
+        font-size: 20px;
+        cursor: pointer;
+        padding: 4px 10px;
+        background: #ffffffaa;
+        border-radius: 6px;
+        border: 1px solid #aaa;
+    }
+
+    .select-unidad {
+        padding: 8px;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .guardar {
+        position: absolute;
+        bottom: 20px;
+        right: 20px;
+        background: #4CAF50;
+        border: none;
+        padding: 12px 25px;
+        color: white;
+        font-size: 14px;
+        border-radius: 8px;
+        cursor: pointer;
+    }
