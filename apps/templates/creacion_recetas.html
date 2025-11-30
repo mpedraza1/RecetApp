@@ -2,60 +2,182 @@
 {% load static %}
 
 {% block content %}
-<link rel="stylesheet" href="{% static 'apps/css/style.css' %}">
 <div class="contenedor-central">
 
-    <!-- Nombre de receta -->
-    <label class="campo" >
-        <strong>Nombre de la receta:</strong><br>
-        <input type="text" placeholder="Ingrese el nombre de la nueva receta">
-    </label>
+    <h2>Crear Nueva Receta</h2>
+    <!-- method="POST" → envía los datos al backend -->
+    <form method="POST">
+        {% csrf_token %}
+        <!-- ====================================================== -->
+        <!-- CAMPO: Nombre de la receta -->
+        <!-- ====================================================== -->
+        <label class="campo">
+            <strong>Nombre de la receta:</strong><br>
+            <input type="text" name="nombre_receta" placeholder="Ingrese el nombre de la nueva receta">
+        </label>
+        <!-- ====================================================== -->
+        <!-- CAMPO: Tipo de comida (select dinámico desde DB) -->
+        <!-- Recibe la lista de tipos_comida desde views.py -->
+        <!-- ====================================================== -->
+        <label class="campo">
+            <strong>Tipo de comida:</strong><br>
+            <select name="tipo_comida">
+                <option value="">Seleccione una opción</option>
 
-    <!-- Título ingredientes -->
-    <strong>Ingresar ingredientes </strong>
+                <!-- Ciclo que imprime todas las opciones -->
+                {% for tipo in tipos_comida %}
+                    <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+                {% endfor %}
+            </select>
+        </label>
 
-    <!-- Bloque de ingrediente (ejemplo inicial) -->
-    <div id="ingredientes-container">
+        <br><br>
 
-    <!-- Bloque de ingrediente (ejemplo inicial) -->
-    <div class="ingrediente">
-        <select class="ingrediente-select">
-            {% for ingrediente in ingredientes %}
-                <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
-            {% endfor %}
-        </select>
-        <input class="cantidad" type="number" placeholder="Cantidad"  >
-        <select class="select-unidad">
-            <option>gr</option>
-            <option>ml</option>
-        </select>
-        <button type="button" class="boton-mas">+</button>
-    </div>
+        <strong>Ingresar ingredientes:</strong>
+        <!-- ======================================================================================= -->
+        <!-- CONTENEDOR DE BLOQUES DE INGREDIENTES -->
+        <!-- Aquí se agregan dinámicamente nuevos "bloques" de ingredientes -->
+        <!-- Cada bloque contiene: ingrediente + cantidad + unidad + botón "+" -->
+        <!-- ======================================================================================= -->
+        <div id="ingredientes-container">
+
+            <!-- Bloque base (se clona con JavaScript al presionar "+") -->
+            <div class="ingrediente">
+
+                <!-- Select de ingredientes desde la base de datos -->
+                <select class="ingrediente-select" name="ingrediente">
+                    {% for ingrediente in ingredientes %}
+                        <!-- ingrediente.id = id_ingrediente en tus models -->
+                        <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+                    {% endfor %}
+                </select>
+
+                <!-- Cantidad -->
+                <input class="cantidad" type="number" name="cantidad" placeholder="Cantidad">
+
+                <!-- Unidad (gr o ml) -->
+                <select class="select-unidad" name="unidad">
+                    <option value="gr">gr</option>
+                    <option value="ml">ml</option>
+                </select>
+
+                <!-- BOTÓN PARA AGREGAR MÁS INGREDIENTES -->
+                <button type="button" class="boton-mas">+</button>
+            </div>
+
+        </div>
+
+        <br>
+
+        <!-- BOTÓN FINAL PARA GUARDAR -->
+        <button class="guardar" type="submit">Guardar</button>
+
+    </form>
 
 </div>
 
-    <!-- Botón Guardar -->
-    <button class="guardar">Guardar</button>
-
-</div>
+<!-- ======================================================================================= -->
+<!-- SCRIPT: Manejo de duplicación de ingredientes + Validación antes de enviar -->
+<!-- ======================================================================================= -->
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const ingredientesContainer = document.getElementById('ingredientes-container');
 
+    const ingredientesContainer = document.getElementById('ingredientes-container');
+    const form = document.querySelector("form");
+
+    /* =====================================================
+       EVENTO: Al presionar "+" se duplica un bloque
+       ===================================================== */
     ingredientesContainer.addEventListener('click', function(event){
+
+        // Si el botón presionado tiene la clase "boton-mas"
         if(event.target.classList.contains('boton-mas')){
-            // Bloque que contiene el botón +
+
+            // Encontramos el bloque actual
             const bloque = event.target.parentElement;
+
+            // Lo clonamos completo
             const nuevoBloque = bloque.cloneNode(true);
 
-            // Limpiamos los valores del nuevo bloque
-            nuevoBloque.querySelector('.cantidad').value = '';
+            // Limpiamos los valores del bloque nuevo
+            nuevoBloque.querySelector('.cantidad').value = "";
             nuevoBloque.querySelector('.ingrediente-select').selectedIndex = 0;
             nuevoBloque.querySelector('.select-unidad').selectedIndex = 0;
 
-            // Agregamos el nuevo bloque al contenedor
+            // Lo agregamos al contenedor
             ingredientesContainer.appendChild(nuevoBloque);
         }
+    });
+
+
+    /* =====================================================
+       VALIDACIÓN DEL FORMULARIO ANTES DE ENVIAR
+       (Solo frontend, la validación del backend está en views.py)
+       ===================================================== */
+    form.addEventListener("submit", function(event) {
+
+        let errores = [];
+
+        // Obtener valores del formulario
+        const nombre = document.querySelector("input[name='nombre_receta']").value.trim();
+        const tipo = document.querySelector("select[name='tipo_comida']").value;
+        
+        // Lista de todos los bloques de ingredientes
+        const list = Array.from(document.querySelectorAll(".ingrediente"));
+
+        /* ------------------------
+           Validación del nombre
+           ------------------------ */
+        if (nombre === "") {
+            errores.push("Debe ingresar un nombre para la receta.");
+        }
+
+        /* ------------------------
+           Validación del tipo comida
+           ------------------------ */
+        if (tipo === "") {
+            errores.push("Debe seleccionar un tipo de comida.");
+        }
+
+        /* -------------------------------
+           Validación de ingredientes
+           - Repetidos
+           - Cantidad obligatoria y > 0
+           - Unidad seleccionada
+           ------------------------------- */
+        let vistos = new Set();
+
+        list.forEach((row) => {
+
+            const ingrediente = row.querySelector(".ingrediente-select").value;
+            const cantidad = row.querySelector(".cantidad").value;
+            const unidad = row.querySelector(".select-unidad").value;
+
+            // Ingrediente repetido
+            if (vistos.has(ingrediente)) {
+                errores.push("Hay ingredientes repetidos.");
+            } else {
+                vistos.add(ingrediente);
+            }
+
+            // Cantidad vacía o <= 0
+            if (cantidad === "" || parseFloat(cantidad) <= 0) {
+                errores.push("Las cantidades deben ser mayores a 0.");
+            }
+
+            // Unidad vacía
+            if (!unidad) {
+                errores.push("Debe seleccionar una unidad para cada ingrediente.");
+            }
+        });
+        /* -------------------------------------------
+           SI HAY ERRORES → BLOQUEAMOS EL FORMULARIO
+           ------------------------------------------- */
+        if (errores.length > 0) {
+            event.preventDefault();
+            alert("Errores encontrados:\n\n" + errores.join("\n"));
+        }
+
     });
 });
 </script>

@@ -1,11 +1,9 @@
 from django.contrib import admin
-from django.urls import path
-from apps import views
-
+from django.urls import path, include  
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("creacion-recetas/", views.crear_receta, name="crear_receta"),
 
-    
+    # Todas las rutas de la app "apps"
+    path('', include('apps.urls')),  
 ]
