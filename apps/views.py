@@ -1,12 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from .models import Recetas, Ingredientes, RecetaIngredientes, TiposComida
+from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
-from .models import Usuarios
-from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm
+from .models import Usuarios, Roles
+from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm, UsuarioAdminForm
 
 
 def crear_receta(request):
@@ -150,7 +151,21 @@ def login_view(request):
                 if check_password(password, usuario.password_hash):
                     request.session['usuario_id'] = usuario.id_usuario
                     request.session['usuario_nombre'] = usuario.nombre
-                    return redirect('index') 
+                    role_id = usuario.id_rol.pk 
+
+                    # CASO 1: Administradores (Rol 1) -> Gestión de Usuarios
+                    if role_id == 1:
+                        return redirect('usuarios') 
+                    
+                    # CASO 2: Cocina/Chef (Rol 2 o 3) -> Cálculo de Recetas
+                    elif role_id in [2, 3]:
+                        return redirect('calculo_recetas')
+                    
+                    # CASO 3: Otros roles no definidos
+                    else:
+                        messages.warning(request, "Tu rol no tiene una página de inicio asignada.")
+                        return redirect('login')
+                     
                 else:
                     messages.error(request, "Contraseña incorrecta.")
             
@@ -221,7 +236,20 @@ def primer_ingreso_b(request):
             request.session['usuario_nombre'] = usuario.nombre
             
             messages.success(request, "Contraseña creada con éxito. Bienvenido.")
-            return redirect('index')
+            role_id = usuario.id_rol.pk 
+
+                    # CASO 1: Administradores (Rol 1) -> Gestión de Usuarios
+            if role_id == 1:
+                return redirect('usuarios') 
+                    
+                    # CASO 2: Cocina/Chef (Rol 2 o 3) -> Cálculo de Recetas
+            elif role_id in [2, 3]:
+                return redirect('calculo_recetas')
+                    
+                    # CASO 3: Otros roles no definidos
+            else:
+                messages.warning(request, "Tu rol no tiene una página de inicio asignada.")
+                return redirect('login')
     else:
         form = NuevaPasswordForm()
 
@@ -288,3 +316,72 @@ def logout_view(request):
     # Opcional: Agregar un mensaje para que aparezca en el login
     messages.success(request, "Has cerrado sesión correctamente.")
     return redirect('login') # Te manda directo a la pantalla de entrada
+
+# 1. VISTA PRINCIPAL (Lista + Buscador)
+def gestion_usuarios(request):
+     # PASO 1: Verificar si siquiera está logueado
+    if 'usuario_id' not in request.session:
+        return redirect('login')  # <--- Si no hay sesión, mándalo al LOGIN, no al index
+
+    # PASO 2: Verificar si es Administrador (Rol 1)
+    if request.session.get('usuario_rol') != 1:
+        messages.error(request, "No tienes permisos de administrador.")
+        # Si entró un Chef por error, lo mandamos a sus recetas, si no, al login
+        return redirect('login')
+    
+    query = request.GET.get('q') # Lo que escribió en el buscador
+    usuarios = Usuarios.objects.all().order_by('id_usuario')
+
+    # Filtro del Buscador
+    if query:
+        # Busca por nombre O por correo
+        usuarios = usuarios.filter(
+            Q(nombre__icontains=query) | Q(correo__icontains=query)
+        )
+
+    # Cargamos los roles para poder usarlos en el HTML manual si es necesario
+    roles = Roles.objects.all()
+    
+    # Pasamos el formulario vacío para el Modal de Crear
+    form_crear = UsuarioAdminForm()
+
+    return render(request, 'usuarios.html', {
+        'usuarios': usuarios,
+        'roles': roles,
+        'form_crear': form_crear
+    })
+
+# 2. ACCIÓN DE CREAR (Viene del Modal)
+def crear_usuario_admin(request):
+    if request.method == 'POST':
+        form = UsuarioAdminForm(request.POST)
+        if form.is_valid():
+            nuevo_usuario = form.save(commit=False)
+            # Importante: Password vacío para que funcione el flujo "Primer Ingreso"
+            nuevo_usuario.password_hash = "" 
+            nuevo_usuario.created_at = timezone.now()
+            nuevo_usuario.save()
+            messages.success(request, "Usuario creado correctamente.")
+        else:
+            messages.error(request, "Error al crear usuario. Revisa los datos.")
+    
+    return redirect('usuarios')
+
+# 3. ACCIÓN DE EDITAR (Viene de la tabla)
+def editar_usuario_admin(request, id_usuario):
+    usuario = get_object_or_404(Usuarios, pk=id_usuario)
+    
+    if request.method == 'POST':
+        # Actualizamos nombre, rol y estado manualmente para ser directos
+        usuario.nombre = request.POST.get('nombre')
+        usuario.correo = request.POST.get('correo')
+        usuario.estado = request.POST.get('estado')
+        
+        # Para el rol, buscamos la instancia
+        rol_id = request.POST.get('rol')
+        usuario.id_rol = Roles.objects.get(pk=rol_id)
+        
+        usuario.save()
+        messages.success(request, f"Usuario {usuario.nombre} actualizado.")
+    
+    return redirect('usuarios')

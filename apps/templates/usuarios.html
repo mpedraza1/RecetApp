@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="contenedor-central">
+    
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>Gestión de Usuarios</h2>
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#modalCrear">
+                <i class="bi bi-person-plus-fill"></i> + Crear Nuevo Usuario
+            </button>
+        </div>
+
+        <div class="card p-3 mb-4 shadow-sm">
+            <form method="get" class="d-flex gap-2">
+                <input type="text" name="q" class="form-control" placeholder="Buscar por nombre o correo..." value="{{ request.GET.q }}">
+                <button type="submit" class="btn btn-primary">Buscar</button>
+                <a href="{% url 'usuarios' %}" class="btn btn-outline-secondary">Limpiar</a>
+            </form>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="table-responsive card shadow-sm">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Correo</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                        <th>Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in usuarios %}
+                    <tr>
+                        <form method="post" action="{% url 'editar_usuario_admin' u.id_usuario %}">
+                            {% csrf_token %}
+                            
+                            <td>
+                                <input type="text" name="nombre" class="form-control form-control-sm" value="{{ u.nombre }}" required>
+                            </td>
+
+                            <td>
+                                <input type="email" name="correo" class="form-control form-control-sm" value="{{ u.correo }}" required>
+                            </td>
+
+                            <td>
+                                <select name="rol" class="form-select form-select-sm">
+                                    {% for r in roles %}
+                                        <option value="{{ r.id_rol }}" {% if u.id_rol.pk == r.id_rol %}selected{% endif %}>
+                                            {{ r.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+
+                            <td>
+                                <select name="estado" class="form-select form-select-sm 
+                                    {% if u.estado == 1 %}text-success{% else %}text-danger{% endif %}">
+                                    <option value="1" {% if u.estado == 1 %}selected{% endif %}>Activo</option>
+                                    <option value="0" {% if u.estado == 0 %}selected{% endif %}>Inactivo</option>
+                                </select>
+                            </td>
+
+                            <td>
+                                <button type="submit" class="btn btn-primary btn-sm">
+                                    Guardar
+                                </button>
+                            </td>
+                        </form>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-4">No se encontraron usuarios.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+
+    <div class="modal fade" id="modalCrear" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title">Registrar Nuevo Usuario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                
+                <form method="post" action="{% url 'crear_usuario_admin' %}">
+                    {% csrf_token %}
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            {{ form_crear.nombre }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Correo</label>
+                            {{ form_crear.correo }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Rol</label>
+                            {{ form_crear.id_rol }}
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Estado Inicial</label>
+                            {{ form_crear.estado }}
+                        </div>
+                        <div class="alert alert-info small">
+                            <i class="bi bi-info-circle"></i> La contraseña se dejará vacía para que el usuario la cree en su "Primer Ingreso".
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-success">Crear Usuario</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+</div>
+{% endblock %}
