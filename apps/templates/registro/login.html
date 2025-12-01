@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% load form_tags %} 
+
+{% block content %}
+<div class="contenedor-central">
+    <h2 class="text-center mb-4">Iniciar sesión</h2>
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="mb-3">
+            <label class="form-label">Correo</label>
+            {{ form.correo|add_class:"form-control" }} 
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Contraseña</label>
+            {{ form.password|add_class:"form-control" }}
+        </div>
+        <div class="d-grid">
+            <button type="submit" class="guardar">Ingresar</button>
+        </div>
+    </form>
+
+    <div class="text-center mt-3">
+        <a href="{% url 'primer_ingreso_a' %}" class="btn btn-secondary">
+             Primer ingreso
+        </a>
+    </div>
+
+    <div class="text-center mt-2">
+        <a href="{% url 'recuperar_a' %}">¿Olvidaste tu contraseña?</a>
+    </div>
+</div>
+{% endblock content %}
