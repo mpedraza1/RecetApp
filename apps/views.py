@@ -374,33 +374,6 @@ def gestion_usuarios(request):
     
     return render(request, 'usuarios.html', context)
 
-# # 🚨 COPIA Y PEGA ESTO EN TU views.py 🚨
-# def gestion_usuarios(request):
-#     # --- DEPURACIÓN DEL FLUJO ---
-#     print("\n--- INICIO DE USUARIOS_VIEW ---")
-    
-#     # Intenta acceder al query de forma diferente para descartar get() fallido
-#     query = request.GET.get('q', None) 
-    
-#     # Imprime el valor antes de la condición IF
-#     print(f"Valor de 'query' ANTES del IF: '{query}'")
-    
-#     if query:
-#         print("El IF se ha cumplido. Ejecutando la búsqueda...")
-        
-#         # Consulta de prueba: SÓLO por nombre
-#         resultados_busqueda = Usuarios.objects.filter(
-#             nombre__icontains=query
-#         )
-#         # ... Líneas de print para resultados_busqueda (Count/First) ...
-        
-#     else:
-#         print("El IF NO se ha cumplido. query es None o cadena vacía.")
-#         resultados_busqueda = None
-    
-#     print("--- FIN DE USUARIOS_VIEW ---\n")
-#     # ... resto del código ...
-
 def crear_usuario_admin(request):
     if request.method == 'POST':
         form = UsuarioAdminForm(request.POST)
