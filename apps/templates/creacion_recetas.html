@@ -5,6 +5,23 @@
 <div class="contenedor-central">
 
     <h2>Crear Nueva Receta</h2>
+    {% if messages %}
+        <ul style="list-style: none; padding: 0; margin-bottom: 20px;">
+            {% for message in messages %}
+                <li style="padding: 10px; margin-bottom: 5px; border-radius: 4px; 
+                    {% if message.tags == 'error' %} 
+                        background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;
+                    {% else %} 
+                        background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; 
+                    {% endif %}">
+                    {{ message }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+    <form method="POST">
+        {% csrf_token %}
+
     <!-- method="POST" → envía los datos al backend -->
     <form method="POST">
         {% csrf_token %}
@@ -45,15 +62,16 @@
             <div class="ingrediente">
 
                 <!-- Select de ingredientes desde la base de datos -->
-                <select class="ingrediente-select" name="ingrediente">
+                <select class="ingrediente-select" name="ingrediente" style="width: auto;" >
+                    <option value="">Seleccione un ingrediente</option>
                     {% for ingrediente in ingredientes %}
                         <!-- ingrediente.id = id_ingrediente en tus models -->
-                        <option value="{{ ingrediente.id }}">{{ ingrediente.nombre }}</option>
+                        <option value="{{ ingrediente.id_ingrediente }}">{{ ingrediente.nombre }}</option>
                     {% endfor %}
                 </select>
 
                 <!-- Cantidad -->
-                <input class="cantidad" type="number" name="cantidad" placeholder="Cantidad">
+                <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" placeholder="Cantidad">
 
                 <!-- Unidad (gr o ml) -->
                 <select class="select-unidad" name="unidad">
@@ -154,10 +172,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const unidad = row.querySelector(".select-unidad").value;
 
             // Ingrediente repetido
-            if (vistos.has(ingrediente)) {
-                errores.push("Hay ingredientes repetidos.");
-            } else {
-                vistos.add(ingrediente);
+            if (ingrediente !== "") { 
+                if (vistos.has(ingrediente)) {
+                    errores.push("Hay ingredientes repetidos (" + row.querySelector("option:checked").text + ").");
+                } else {
+                    vistos.add(ingrediente);
+                }
             }
 
             // Cantidad vacía o <= 0

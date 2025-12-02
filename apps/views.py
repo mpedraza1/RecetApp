@@ -7,8 +7,9 @@ from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
 from .models import Usuarios
 from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm
+from django.db import transaction
 
-
+@transaction.atomic # ⬅️ USAMOS EL DECORADOR PARA TRANSACCIÓN
 def crear_receta(request):
     """
     Vista encargada de:
@@ -28,15 +29,87 @@ def crear_receta(request):
         tipo_comida = request.POST.get("tipo_comida")
 
         # Como hay varios ingredientes, Django recibe listas
-        ingredientes = request.POST.getlist("ingrediente")
-        cantidades = request.POST.getlist("cantidad")
+        ingredientes_ids = request.POST.getlist("ingrediente") # Renombrado para claridad
+        cantidades_str = request.POST.getlist("cantidad")      # Renombrado para claridad
         unidades = request.POST.getlist("unidad")
 
         errores = []  # Lista donde acumularemos errores
+        
+        # ---------------------------------------------------------
+        # Pre-procesamiento de Ingredientes: 
+        # Filtramos solo los que tienen Cantidad > 0 para validar y guardar.
+        # ---------------------------------------------------------
+        
+        # ==============================================================================
+        # COPIA DESDE AQUÍ EN TU VIEWS.PY (Reemplaza el bucle for anterior)
+        # ==============================================================================
+        
+        print(f"DEBUG: Recibí listas del HTML -> IDs: {ingredientes_ids} | Cantidades: {cantidades_str}")
+
+        ingredientes_validos = []
+        
+        for i, ing_id in enumerate(ingredientes_ids):
+            ing_id = ing_id.strip()
+            texto_cantidad = cantidades_str[i]
+            
+            print(f"--- Analizando Fila {i} ---")
+            print(f"   1. ID Ingrediente: '{ing_id}'")
+            print(f"   2. Texto Cantidad: '{texto_cantidad}'")
+
+            try:
+                # Intentamos convertir
+                cantidad = float(texto_cantidad.replace(',', '.'))
+                print(f"   3. Conversión Exitosa: El número es {cantidad}")
+            except Exception as e:
+                print(f"   3. ERROR DE CONVERSIÓN: {e}")
+                cantidad = 0
+
+            unidad = unidades[i].strip() if i < len(unidades) else ""
+            
+            # Verificación final
+            if cantidad > 0 and ing_id:
+                print("   RESULTADO: APROBADO ✅")
+                ingredientes_validos.append({
+                    'id': ing_id,
+                    'cantidad': cantidad,
+                    'unidad': unidad
+                })
+            else:
+                print(f"   RESULTADO: RECHAZADO ❌ (Cant: {cantidad}, ID: '{ing_id}')")
+
+        # ==============================================================================
+        # ingredientes_validos = []
+        
+        # for i, ing_id in enumerate(ingredientes_ids):
+        #     # Limpiamos espacios en blanco del ID
+        #     ing_id = ing_id.strip() 
+            
+        #     # Obtenemos el texto de la cantidad
+        #     texto_cantidad = cantidades_str[i]
+
+        #     try:
+        #         # AQUÍ ESTÁ EL ARREGLO PRINCIPAL:
+        #         # Reemplazamos la coma por punto para que Python entienda el decimal
+        #         cantidad = float(texto_cantidad.replace(',', '.'))
+        #     except (ValueError, IndexError):
+        #         cantidad = 0
+
+        #     # Validar que exista la unidad (para evitar errores de índice)
+        #     unidad = unidades[i].strip() if i < len(unidades) else ""
+            
+        #     # CONDICIÓN CORREGIDA:
+        #     # 1. Cantidad debe ser mayor a 0
+        #     # 2. Tiene que haber un ID de ingrediente (ing_id) seleccionado
+        #     if cantidad > 0 and ing_id:  
+        #         ingredientes_validos.append({
+        #             'id': ing_id,
+        #             'cantidad': cantidad,
+        #             'unidad': unidad
+        #         })
 
 
         # ======================================================================================
-        # ===============                VALIDACIONES                =============================
+        # ===============                       VALIDACIONES                      =============================
         # ======================================================================================
 
         # Validación nombre
@@ -44,65 +117,69 @@ def crear_receta(request):
             errores.append("Debe ingresar un nombre para la receta.")
 
         # Validación de tipo comida
-        # Se verifica que exista en la tabla TiposComida
         if not tipo_comida or not TiposComida.objects.filter(id_tipo_comida=tipo_comida).exists():
             errores.append("Tipo de comida inválido.")
 
-        # Validación de ingredientes
+        # Validación de ingredientes válidos
+        if not ingredientes_validos:
+            errores.append("Debe ingresar al menos un ingrediente con cantidad mayor a cero.")
+            
         usados = set()  # Para evitar ingredientes repetidos
 
-        for i, ing in enumerate(ingredientes):
+        for ing_data in ingredientes_validos:
 
-            # ¿Ingrediente repetido?
-            if ing in usados:
+            ing_id = ing_data['id']
+            cantidad = ing_data['cantidad']
+            unidad = ing_data['unidad']
+
+            # 1. Ingrediente repetido
+            if ing_id in usados:
                 errores.append("Hay ingredientes repetidos.")
-            usados.add(ing)
+            else:
+                usados.add(ing_id)
 
-            # Validación de cantidad
-            try:
-                cantidad = float(cantidades[i])
-                if cantidad <= 0:
-                    errores.append("Las cantidades deben ser mayores a 0.")
-            except:
-                errores.append("Cantidad inválida.")
-
-            # Validación unidad
-            if unidades[i].strip() == "":
-                errores.append("Debe ingresar una unidad válida.")
-
+            # 2. Validación unidad (la cantidad ya se filtró como > 0)
+            if unidad == "":
+                errores.append(f"Debe seleccionar una unidad para el ingrediente ID: {ing_id}.")
+                
+            # 3. Validación de existencia del ingrediente (Opcional, pero recomendado)
+            if not Ingredientes.objects.filter(pk=ing_id).exists():
+                 errores.append(f"El ingrediente ID '{ing_id}' no es válido o no existe.")
 
         # ======================================================================================
-        # ===============     SI EXISTEN ERRORES, NO SE GUARDA    ==============================
+        # ===============     SI EXISTEN ERRORES, NO SE GUARDA (ROLLBACK)      ==================
         # ======================================================================================
         if errores:
+            # Los mensajes de error se añaden y el código se redirige. 
+            # La transacción no ha terminado, por lo que no hace falta rollback explícito.
             for e in errores:
                 messages.error(request, e)  # Enviar mensajes al usuario
-            return redirect("crear_receta")  # Recarga la página sin guardar nada
+            return redirect("crear_receta") 
 
 
         # ======================================================================================
-        # ===============            GUARDADO DE LA RECETA          =============================
+        # ===============             GUARDADO DE LA RECETA (COMMIT)            ==================
         # ======================================================================================
 
-        # Crear la receta en la tabla "recetas"
+        # 1. Crear la receta en la tabla "recetas"
         receta = Recetas.objects.create(
             nombre=nombre,
-            id_tipo_comida_id=tipo_comida,  # ForeignKey con sufijo _id
-            estado=1,                       # Estado activo
+            id_tipo_comida_id=tipo_comida, 
+            estado=1,                      
             created_at=timezone.now(),
             updated_at=timezone.now(),
         )
 
-        # Crear cada ingrediente asociado a la receta
-        for i, ing in enumerate(ingredientes):
+        # 2. Crear cada ingrediente asociado a la receta
+        for ing_data in ingredientes_validos:
             RecetaIngredientes.objects.create(
-                id_receta=receta,          # ForeignKey al objeto receta creado
-                id_ingrediente_id=ing,     # ID del ingrediente
-                cantidad=cantidades[i],
-                unidad=unidades[i]
+                id_receta=receta,              
+                id_ingrediente_id=ing_data['id'], 
+                cantidad=ing_data['cantidad'],
+                unidad=ing_data['unidad']
             )
 
-        # Mensaje de éxito
+        # Si llega aquí, la transacción se ha completado correctamente (COMMIT)
         messages.success(request, "Receta agregada correctamente.")
         
         # Redirigir nuevamente al formulario limpio
@@ -110,7 +187,7 @@ def crear_receta(request):
 
 
     # ======================================================================================
-    # ===============           SI ES GET → MOSTRAR FORMULARIO     =========================
+    # ===============        SI ES GET → MOSTRAR FORMULARIO      =========================
     # ======================================================================================
     context = {
         "ingredientes": Ingredientes.objects.all(),  # Lista de ingredientes para el select
@@ -118,7 +195,6 @@ def crear_receta(request):
     }
 
     return render(request, "creacion_recetas.html", context)
-
 
 
 # ---------------------------------------------------
