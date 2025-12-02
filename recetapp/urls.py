@@ -6,4 +6,5 @@ urlpatterns = [
 
     # Todas las rutas de la app "apps"
     path('', include('apps.urls')),  
+
 ]
