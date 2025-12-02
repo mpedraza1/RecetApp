@@ -347,8 +347,9 @@ def calcular_por_tipo(request):
         comensales = int(data.get("comensales", 1))
         
         receta_dos = data.get("receta_dos")
-        tipo_dos = int(data.get("tipo_dos"))
-
+        tipo_dos_raw = data.get("tipo_dos")
+        tipo_dos = int(tipo_dos_raw) if tipo_dos_raw not in [None, ""] else None
+        
         if not receta_id:
             return JsonResponse({"error": "No se envió receta_id"}, status=400)
 
