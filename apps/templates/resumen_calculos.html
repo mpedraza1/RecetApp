@@ -1,0 +1,261 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="contenedor-central">
+
+    <h2 class="text-center">Crear resumen</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <div class="container mt-4">
+
+            <!-- ===================================================== -->
+            <!-- FILA 1: FECHA + COMENSALES -->
+            <!-- ===================================================== -->
+            <div class="row g-3 justify-content-center">
+                <div class="col-6 col-md-3">
+                    <label class="form-label"><strong>Fecha Receta:</strong></label>
+                    <input type="date" class="form-control" name="fecha_receta">
+                </div>
+
+                <div class="col-6 col-md-3">
+                    <label class="form-label"><strong>N° Comensales:</strong></label>
+                    <input type="number" class="form-control" name="comensales" min="1">
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- FILA 2: TIPO COMIDA + RECETA -->
+            <!-- ===================================================== -->
+            <div class="row g-3 justify-content-center mt-2">
+                <div class="col-12 col-md-4">
+                    <label class="form-label"><strong>Tipo de Comida:</strong></label>
+                    <select id="tipoComida" class="form-select" name="tipo_comida">
+                        <option value="">Seleccione una opción</option>
+                        {% for tipo in tipos_comida %}
+                            <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label"><strong>Elige una Receta:</strong></label>
+                    <select id="receta" class="form-select" name="receta">
+                        <option value="">Seleccione una receta</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- FILA 3: SEGUNDA REPETICIÓN (si la necesitas) -->
+            <!-- ===================================================== -->
+            <div class="row g-3 justify-content-center mt-2">
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label"><strong>Tipo de Comida:</strong></label>
+                    <select id="tipoComida2" class="form-select" disabled name="tipo_comida_2">
+                        <option value="">Seleccione una opción</option>
+                        {% for tipo in tipos_comida %}
+                            <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-md-4">
+                    <label class="form-label"><strong>Elige una Receta:</strong></label>
+                    <select id="receta2" class="form-select" disabled name="receta_2">
+                        <option value="">Seleccione una receta</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- FILA 4: BOTONES CALCULAR / AGREGAR -->
+            <!-- ===================================================== -->
+            <div class="row g-3 justify-content-center mt-3">
+                <div class="col-6 col-md-3 d-grid">
+                    <button type="button" class="btn btn-success" id="calcular">Calcular</button>
+                </div>
+
+                <div class="col-6 col-md-3 d-grid">
+                    <button type="button" class="btn btn-purple" style="background:#8a2be2; color:white;">Agregar</button>
+                </div>
+            </div>
+
+            <!-- ===================================================== -->
+            <!-- FILA 5: BOTÓN INFORME -->
+            <!-- ===================================================== -->
+            <div class="row g-3 justify-content-center mt-4">
+                <div class="col-8 col-md-4 d-grid">
+                    <button type="button" class="btn btn-primary">Generar Informe</button>
+                </div>
+            </div>
+
+        </div>
+
+    </form>
+
+<hr>
+
+<div class="container mt-4" style="display: none;" id="seccionIngredientes">
+
+    <h4 class="mb-3 text-center">Ingredientes Calculados</h4>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle text-center shadow-sm rounded-3" id="tablaIngredientes">
+            <thead class="table-primary rounded-3">
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Cantidad Base</th>
+                    <th>Unidad</th>
+                    <th>Cantidad Total</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyIngredientes">
+                <!-- Aquí JS insertará las filas -->
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+
+
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    let calculo = false;
+    const dashabilitados = [1,4]
+    const selectTipo = document.getElementById("tipoComida");
+    const selectReceta = document.getElementById("receta");
+    const selectTipo2 = document.getElementById("tipoComida2");
+    const selectReceta2 = document.getElementById("receta2");
+    const botonCalcular = document.getElementById("calcular");
+    const seccionIngredientes = document.getElementById("seccionIngredientes");
+    
+    selectTipo.addEventListener("change", function () {
+        const tipoId = this.value;
+        console.log("Tipo de comida seleccionado:", tipoId);
+        selectReceta.innerHTML = `<option value="">Cargando...</option>`;
+
+        if (!tipoId) {
+            selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
+            return;
+        }
+
+    
+        if (dashabilitados.includes(parseInt(tipoId))) {
+            document.getElementById("tipoComida2").disabled = true;
+            document.getElementById("receta2").disabled = true;
+        } else {
+            document.getElementById("tipoComida2").disabled = false;
+            document.getElementById("receta2").disabled = false;
+        }
+
+        fetch(`/recetas-por-tipo/${tipoId}/`)
+            .then(response => response.json())
+            .then(data => {
+                selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
+                data.forEach(receta => {
+                    selectReceta.innerHTML += `
+                        <option value="${receta.id_receta}">${receta.nombre}</option>
+                    `;
+                });
+            })
+            .catch(() => {
+                selectReceta.innerHTML = `<option value="">Error al cargar</option>`;
+            });
+    });
+    botonCalcular.addEventListener("click", function () {
+        const tipoId = selectTipo.value;
+        const recetaId = selectReceta.value;
+        const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+        if (!tipoId || !recetaId) {
+            alert("Por favor, seleccione un tipo de comida y una receta.");
+            return;
+        }
+
+        fetch(`/calcular-por-tipo/`, 
+        {method: "POST", 
+        body: JSON.stringify({  
+            receta_id: recetaId,
+            comensales: document.querySelector('[name="comensales"]').value,
+            receta_dos: selectReceta2.value,
+            tipo_dos: selectTipo2.value,}), 
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+            }})
+            .then(response => response.json())
+            .then(data => {
+
+                console.log("Cálculo recibido:", data);
+                calculo = true;
+                // El cálculo viene como: { calculo: [ {..}, {..}, ... ] }
+                const items = data.calculo;
+
+                const tbody = document.getElementById("tbodyIngredientes");
+
+                // Limpiar tabla antes de agregar
+                tbody.innerHTML = "";
+
+                // Rellenar tabla
+                items.forEach(item => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td>${item.ingrediente}</td>
+                            <td>${item.cantidad_base}</td>
+                            <td>${item.unidad}</td>
+                            <td class="fw-bold text-primary">${item.cantidad_total}</td>
+                        </tr>
+                    `;
+                });
+
+                seccionIngredientes.style.display = "block";
+
+            })
+            .catch(() => {
+                alert("Error al realizar el cálculo.");
+            });
+    });
+    selectTipo2.addEventListener("change", function () {
+    const tipoId = this.value;
+    console.log("Tipo de comida 2 seleccionado:", tipoId);
+    selectReceta2.innerHTML = `<option value="">Cargando...</option>`;
+
+    if (!tipoId) {
+        selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+        return;
+    }
+
+    fetch(`/recetas-por-tipo/${tipoId}/`)
+        .then(response => response.json())
+        .then(data => {
+            selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+            data.forEach(receta => {
+                selectReceta2.innerHTML += `
+                    <option value="${receta.id_receta}">${receta.nombre}</option>
+                `;
+            });
+        })
+        .catch(() => {
+            selectReceta2.innerHTML = `<option value="">Error al cargar</option>`;
+        });
+});
+
+});
+
+/*document.addEventListener("DOMContentLoaded", function () {
+    cargarRecetas("tipoComida", "receta");      // Primer bloque
+    cargarRecetas("tipoComida2", "receta2");    // Segundo bloque
+});*/
+</script>
+
+
+{% endblock %}

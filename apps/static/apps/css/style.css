@@ -20,12 +20,24 @@
     margin-bottom: 20px;
 }
 
-.campo input {
+.campo input:not(.fecha) {
     width: 60%;
     padding: 10px;
     border-radius: 8px;
     border: none;
     font-size: 14px;
+}
+
+/* Campo de fecha */
+.fecha {
+    padding: 10px;
+    border-radius: 8px;
+    border: none;
+    font-size: 14px;
+}
+
+input[type="date"] {
+    -webkit-min-inline-size: 0;
 }
 
 /* --------------------------------

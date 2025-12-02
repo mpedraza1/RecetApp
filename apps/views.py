@@ -1,21 +1,19 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
-from .models import Recetas, Ingredientes, RecetaIngredientes, TiposComida
+from django.http import JsonResponse
+from .models import Recetas, Ingredientes, RecetaIngredientes, TiposComida, Usuarios, Roles
 from django.db.models import Q
 from django.shortcuts import render, redirect
 from django.contrib.auth.hashers import make_password, check_password
 from django.contrib import messages
-<<<<<<< HEAD
-from .models import Usuarios
-from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm
 from django.db import transaction
-=======
-from .models import Usuarios, Roles
 from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm, UsuarioAdminForm
->>>>>>> a6cff90f3278205f8c0648192075b6e3b5b31613
+import json
 
 @transaction.atomic # ⬅️ USAMOS EL DECORADOR PARA TRANSACCIÓN
+
+
 def crear_receta(request):
     """
     Vista encargada de:
@@ -201,6 +199,200 @@ def crear_receta(request):
     }
 
     return render(request, "creacion_recetas.html", context)
+
+
+
+def recetas_por_tipo(request, id_tipo):
+    recetas = Recetas.objects.filter(id_tipo_comida=id_tipo).values("id_receta", "nombre")
+    return JsonResponse(list(recetas), safe=False)
+
+def resumen_calculos(request):
+    tipos_comida = TiposComida.objects.all()
+    ingredientes = Ingredientes.objects.all()
+
+    calculo = None  # Aquí guardaremos los resultados
+
+    if request.method == "POST":
+        receta_id = request.POST.get("receta")
+        comensales = int(request.POST.get("comensales", 1))
+
+        # Obtener receta seleccionada
+        receta = Recetas.objects.get(id_receta=receta_id)
+
+        # Obtener ingredientes de la receta
+        ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+
+        # Calcular cantidades
+        calculo = []
+        for item in ingredientes_receta:
+            cantidad_total = item.cantidad * comensales
+            calculo.append({
+                "ingrediente": item.id_ingrediente.nombre,
+                "cantidad_base": item.cantidad,
+                "unidad": item.id_unidad.nombre,
+                "cantidad_total": cantidad_total
+            })
+
+    context = {
+        "tipos_comida": tipos_comida,
+        "ingredientes": ingredientes,
+        "calculo": calculo
+    }
+
+    return render(request, "resumen_calculos.html", context)
+
+def calcular_por_tipo(request):
+    if request.method == "POST":
+
+        data = json.loads(request.body.decode("utf-8"))
+
+        receta_id = data.get("receta_id")
+        comensales = int(data.get("comensales", 1))
+        
+        receta_dos = data.get("receta_dos")
+        tipo_dos = int(data.get("tipo_dos"))
+
+        if not receta_id:
+            return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+        try:
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo_dos = None
+            
+            if receta_dos and tipo_dos:
+                receta_dos = Recetas.objects.get(id_receta=receta_dos, id_tipo_comida=tipo_dos)
+                ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                calculo_dos = []
+                for item in ingredientes_receta_dos:
+                    cantidad_total_dos = item.cantidad * comensales
+                    calculo_dos.append({
+                        "ingrediente": item.id_ingrediente.nombre,
+                        "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                        "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
+                        "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
+                    })
+                    
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": f"La receta {receta_id} no existe"}, status=404)
+
+
+        
+        calculo = []
+        for item in ingredientes_receta:
+            cantidad_total = item.cantidad * comensales
+            calculo.append({
+                "ingrediente": item.id_ingrediente.nombre,
+                "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
+                "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
+            })
+        
+
+            
+        return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+
+
+
+def recetas_por_tipo(request, id_tipo):
+    recetas = Recetas.objects.filter(id_tipo_comida=id_tipo).values("id_receta", "nombre")
+    return JsonResponse(list(recetas), safe=False)
+
+def resumen_calculos(request):
+    tipos_comida = TiposComida.objects.all()
+    ingredientes = Ingredientes.objects.all()
+
+    calculo = None  # Aquí guardaremos los resultados
+
+    if request.method == "POST":
+        receta_id = request.POST.get("receta")
+        comensales = int(request.POST.get("comensales", 1))
+
+        # Obtener receta seleccionada
+        receta = Recetas.objects.get(id_receta=receta_id)
+
+        # Obtener ingredientes de la receta
+        ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+
+        # Calcular cantidades
+        calculo = []
+        for item in ingredientes_receta:
+            cantidad_total = item.cantidad * comensales
+            calculo.append({
+                "ingrediente": item.id_ingrediente.nombre,
+                "cantidad_base": item.cantidad,
+                "unidad": item.id_unidad.nombre,
+                "cantidad_total": cantidad_total
+            })
+
+    context = {
+        "tipos_comida": tipos_comida,
+        "ingredientes": ingredientes,
+        "calculo": calculo
+    }
+
+    return render(request, "resumen_calculos.html", context)
+
+def calcular_por_tipo(request):
+    if request.method == "POST":
+
+        data = json.loads(request.body.decode("utf-8"))
+
+        receta_id = data.get("receta_id")
+        comensales = int(data.get("comensales", 1))
+        
+        receta_dos = data.get("receta_dos")
+        tipo_dos = int(data.get("tipo_dos"))
+
+        if not receta_id:
+            return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+        try:
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo_dos = None
+            
+            if receta_dos and tipo_dos:
+                receta_dos = Recetas.objects.get(id_receta=receta_dos, id_tipo_comida=tipo_dos)
+                ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                calculo_dos = []
+                for item in ingredientes_receta_dos:
+                    cantidad_total_dos = item.cantidad * comensales
+                    calculo_dos.append({
+                        "ingrediente": item.id_ingrediente.nombre,
+                        "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                        "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
+                        "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
+                    })
+                    
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": f"La receta {receta_id} no existe"}, status=404)
+
+
+        
+        calculo = []
+        for item in ingredientes_receta:
+            cantidad_total = item.cantidad * comensales
+            calculo.append({
+                "ingrediente": item.id_ingrediente.nombre,
+                "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
+                "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
+            })
+        
+
+            
+        return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
 
 
 # ---------------------------------------------------
