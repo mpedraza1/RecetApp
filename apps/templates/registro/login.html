@@ -15,13 +15,13 @@
             <label class="form-label">Contraseña</label>
             {{ form.password|add_class:"form-control" }}
         </div>
-        <div class="d-grid">
-            <button type="submit" class="guardar">Ingresar</button>
+    <div class="text-center mt-3">
+            <button type="submit" class= "boton btn btn-primary">Ingresar</button>
         </div>
     </form>
 
     <div class="text-center mt-3">
-        <a href="{% url 'primer_ingreso_a' %}" class="btn btn-secondary">
+        <a href="{% url 'primer_ingreso_a' %}">
              Primer ingreso
         </a>
     </div>
@@ -29,5 +29,18 @@
     <div class="text-center mt-2">
         <a href="{% url 'recuperar_a' %}">¿Olvidaste tu contraseña?</a>
     </div>
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert 
+                {% if message.tags == 'error' %}alert-danger
+                {% elif message.tags == 'success' %}alert-success
+                {% elif message.tags == 'warning' %}alert-warning
+                {% else %}alert-info
+                {% endif %}
+                " role="alert">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
 </div>
 {% endblock content %}

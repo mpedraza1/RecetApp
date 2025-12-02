@@ -29,7 +29,11 @@ SET row_security = off;
 CREATE FUNCTION public.update_timestamp() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
+<<<<<<< HEAD
 BEGINF
+=======
+BEGIN
+>>>>>>> a6cff90f3278205f8c0648192075b6e3b5b31613
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
