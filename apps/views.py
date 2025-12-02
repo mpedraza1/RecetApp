@@ -164,17 +164,37 @@ def calcular_por_tipo(request):
 
         receta_id = data.get("receta_id")
         comensales = int(data.get("comensales", 1))
+        
+        receta_dos = data.get("receta_dos")
+        tipo_dos = int(data.get("tipo_dos"))
 
         if not receta_id:
             return JsonResponse({"error": "No se envió receta_id"}, status=400)
 
         try:
             receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo_dos = None
+            
+            if receta_dos and tipo_dos:
+                receta_dos = Recetas.objects.get(id_receta=receta_dos, id_tipo_comida=tipo_dos)
+                ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                calculo_dos = []
+                for item in ingredientes_receta_dos:
+                    cantidad_total_dos = item.cantidad * comensales
+                    calculo_dos.append({
+                        "ingrediente": item.id_ingrediente.nombre,
+                        "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                        "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
+                        "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
+                    })
+                    
         except Recetas.DoesNotExist:
             return JsonResponse({"error": f"La receta {receta_id} no existe"}, status=404)
 
-        ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
 
+        
         calculo = []
         for item in ingredientes_receta:
             cantidad_total = item.cantidad * comensales
@@ -184,8 +204,10 @@ def calcular_por_tipo(request):
                 "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
                 "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
             })
+        
 
-        return JsonResponse({"calculo": calculo})
+            
+        return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
     
     return JsonResponse({"error": "Método no permitido"}, status=405)
 

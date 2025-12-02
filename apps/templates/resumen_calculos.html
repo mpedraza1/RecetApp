@@ -183,8 +183,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
         fetch(`/calcular-por-tipo/`, 
         {method: "POST", 
-        body: JSON.stringify({  receta_id: recetaId,
-                                comensales: document.querySelector('[name="comensales"]').value}), 
+        body: JSON.stringify({  
+            receta_id: recetaId,
+            comensales: document.querySelector('[name="comensales"]').value,
+            receta_dos: selectReceta2.value,
+            tipo_dos: selectTipo2.value,}), 
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken
