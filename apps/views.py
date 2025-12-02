@@ -430,14 +430,15 @@ def login_view(request):
                     request.session['usuario_rol'] = role_id
                     
                     # CASO 1: Administradores (Rol 1 y 2) -> Gestión de Usuarios
-                    if role_id in [1, 2]:
+                    if role_id == 1:
                         return redirect('usuarios')
                     
                     # CASO 2: Cocina/Chef (Rol 2 o 3) -> Cálculo de Recetas
-                    #elif role_id in [2, 3]:
                     elif role_id == 3:
-                        return redirect('calculo_recetas')
+                        return redirect('resumen_calculos')
                     
+                    elif role_id == 2:
+                        return redirect('crear_receta')
                     # CASO 3: Otros roles no definidos
                     else:
                         messages.warning(request, "Tu rol no tiene una página de inicio asignada.")
