@@ -153,12 +153,15 @@ def login_view(request):
                     request.session['usuario_nombre'] = usuario.nombre
                     role_id = usuario.id_rol.pk 
 
-                    # CASO 1: Administradores (Rol 1) -> Gestión de Usuarios
-                    if role_id == 1:
-                        return redirect('usuarios') 
+                    request.session['usuario_rol'] = role_id
+                    
+                    # CASO 1: Administradores (Rol 1 y 2) -> Gestión de Usuarios
+                    if role_id in [1, 2]:
+                        return redirect('usuarios')
                     
                     # CASO 2: Cocina/Chef (Rol 2 o 3) -> Cálculo de Recetas
-                    elif role_id in [2, 3]:
+                    #elif role_id in [2, 3]:
+                    elif role_id == 3:
                         return redirect('calculo_recetas')
                     
                     # CASO 3: Otros roles no definidos
@@ -167,10 +170,11 @@ def login_view(request):
                         return redirect('login')
                      
                 else:
-                    messages.error(request, "Contraseña incorrecta.")
+                    messages.error(request, "Credenciales inválidas")
+                    return redirect('login')
             
             except Usuarios.DoesNotExist:
-                messages.error(request, "Correo no registrado.")
+                messages.error(request, "Credenciales inválidas")
     else:
         form = LoginForm()
 
@@ -224,36 +228,26 @@ def primer_ingreso_b(request):
         form = NuevaPasswordForm(request.POST)
         if form.is_valid():
             usuario = Usuarios.objects.get(pk=usuario_id)
-            
             # Guardamos la nueva contraseña
             # NO tocamos el estado, porque ya verificamos que estaba activo
             usuario.password_hash = make_password(form.cleaned_data['password'])
             usuario.save()
-
             # Limpiamos temp y logueamos
             del request.session['usuario_temp_id']
-            request.session['usuario_id'] = usuario.id_usuario
-            request.session['usuario_nombre'] = usuario.nombre
-            
-            messages.success(request, "Contraseña creada con éxito. Bienvenido.")
-            role_id = usuario.id_rol.pk 
-
-                    # CASO 1: Administradores (Rol 1) -> Gestión de Usuarios
-            if role_id == 1:
-                return redirect('usuarios') 
-                    
-                    # CASO 2: Cocina/Chef (Rol 2 o 3) -> Cálculo de Recetas
-            elif role_id in [2, 3]:
-                return redirect('calculo_recetas')
-                    
-                    # CASO 3: Otros roles no definidos
-            else:
+            # Borraremos las líneas de 'request.session['usuario_id'] = ...'
+            # Mensaje de éxito y redirigir al login para que el usuario inicie sesión
+            messages.success(request, "Contraseña creada con éxito. Ya puedes iniciar sesión.")
+            return redirect('login') # <--- ¡El cambio clave!
+        else:
                 messages.warning(request, "Tu rol no tiene una página de inicio asignada.")
                 return redirect('login')
     else:
         form = NuevaPasswordForm()
 
     return render(request, 'registro/primer_ingreso_b.html', {'form': form})
+
+
+
 
 # ---------------------------------------------------
 # 4. RECUPERAR CONTRASEÑA - PASO 1 (Validar Correo)
@@ -322,12 +316,15 @@ def gestion_usuarios(request):
      # PASO 1: Verificar si siquiera está logueado
     if 'usuario_id' not in request.session:
         return redirect('login')  # <--- Si no hay sesión, mándalo al LOGIN, no al index
-
+    user_role = request.session.get('usuario_rol')
     # PASO 2: Verificar si es Administrador (Rol 1)
-    if request.session.get('usuario_rol') != 1:
-        messages.error(request, "No tienes permisos de administrador.")
-        # Si entró un Chef por error, lo mandamos a sus recetas, si no, al login
-        return redirect('login')
+    if user_role not in [1, 2]: 
+        messages.error(request, "No tienes permisos de administrador para acceder a esta página.")
+        
+        # Redirigir según el rol, si no es 1 o 2
+        if user_role == 3:
+            return redirect('calculo_recetas')
+        return redirect('login') # Si es un rol desconocido
     
     query = request.GET.get('q') # Lo que escribió en el buscador
     usuarios = Usuarios.objects.all().order_by('id_usuario')
@@ -351,7 +348,59 @@ def gestion_usuarios(request):
         'form_crear': form_crear
     })
 
-# 2. ACCIÓN DE CREAR (Viene del Modal)
+
+def gestion_usuarios(request):
+    form_crear = UsuarioAdminForm()
+    query = request.GET.get('q')
+    
+    # Inicializamos la NUEVA variable de resultados como None.
+    resultados_busqueda = None 
+    
+    if query:
+        # Asignamos los resultados a la NUEVA variable solo si hay búsqueda.
+        resultados_busqueda = Usuarios.objects.filter(
+            Q(nombre__icontains=query) | Q(correo__icontains=query)
+        ).order_by('nombre')
+        
+    roles = Roles.objects.all() 
+    
+    context = {
+        'form_crear': form_crear,
+        # Usamos el nuevo nombre en el contexto
+        'resultados_busqueda': resultados_busqueda, 
+        'roles': roles, 
+        'query': query,
+    }
+    
+    return render(request, 'usuarios.html', context)
+
+# # 🚨 COPIA Y PEGA ESTO EN TU views.py 🚨
+# def gestion_usuarios(request):
+#     # --- DEPURACIÓN DEL FLUJO ---
+#     print("\n--- INICIO DE USUARIOS_VIEW ---")
+    
+#     # Intenta acceder al query de forma diferente para descartar get() fallido
+#     query = request.GET.get('q', None) 
+    
+#     # Imprime el valor antes de la condición IF
+#     print(f"Valor de 'query' ANTES del IF: '{query}'")
+    
+#     if query:
+#         print("El IF se ha cumplido. Ejecutando la búsqueda...")
+        
+#         # Consulta de prueba: SÓLO por nombre
+#         resultados_busqueda = Usuarios.objects.filter(
+#             nombre__icontains=query
+#         )
+#         # ... Líneas de print para resultados_busqueda (Count/First) ...
+        
+#     else:
+#         print("El IF NO se ha cumplido. query es None o cadena vacía.")
+#         resultados_busqueda = None
+    
+#     print("--- FIN DE USUARIOS_VIEW ---\n")
+#     # ... resto del código ...
+
 def crear_usuario_admin(request):
     if request.method == 'POST':
         form = UsuarioAdminForm(request.POST)
