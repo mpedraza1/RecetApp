@@ -36,7 +36,7 @@
     font-size: 14px;
 }
 
-input[type="date"] {
+input[type="date"] {        
     -webkit-min-inline-size: 0;
 }
 
