@@ -11,8 +11,8 @@ def probar_creacion_completa():
         # --- PASO 1: LOGIN ---
         driver.get("http://127.0.0.1:8000/")
         time.sleep(1)
-        driver.find_element(By.NAME, "correo").send_keys("oriana.lagos@coanil.cl") 
-        driver.find_element(By.NAME, "password").send_keys("m3.N0.l1nd4")         
+        driver.find_element(By.NAME, "correo").send_keys("xxx@coanil.cl") 
+        driver.find_element(By.NAME, "password").send_keys("xxx")         
         driver.find_element(By.XPATH, "//button[@type='submit']").click()
         time.sleep(2)
 
