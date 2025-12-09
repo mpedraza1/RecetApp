@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.utils import timezone
 from django.http import JsonResponse
+from django.http import HttpResponse
 from .models import Recetas, Ingredientes, RecetaIngredientes, TiposComida, Usuarios, Roles
 from django.db.models import Q
 from django.shortcuts import render, redirect
@@ -11,6 +12,8 @@ from django.contrib import messages
 from django.db import transaction
 from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm, UsuarioAdminForm
 import json
+from .utils import render_to_pdf
+from django.db.models import F
 
 @login_personalizado_required
 @transaction.atomic # ⬅️ USAMOS EL DECORADOR PARA TRANSACCIÓN
@@ -615,3 +618,48 @@ def editar_usuario_admin(request, id_usuario):
         messages.success(request, f"Usuario {usuario.nombre} actualizado.")
     
     return redirect('usuarios')
+
+def generar_informe_pdf(request):
+    # 1. Obtener datos
+    cant_comensales = int(request.GET.get('comensales', 1))
+    receta_ids = request.GET.get('recetas', '').split(',')
+    
+    lista_ingredientes = []
+
+    # 2. Filtrar recetas (usando id_receta)
+    recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+    
+    for receta in recetas:
+        # Buscar los ingredientes de la receta
+        ingredientes_relacion = RecetaIngredientes.objects.filter(id_receta=receta)
+        
+        for ing in ingredientes_relacion:
+            # Obtener nombres y unidad
+            nombre_ingrediente = ing.id_ingrediente.nombre 
+            unidad_medida = ing.id_ingrediente.unidad_base
+            
+            # Cálculo directo (Multiplicación simple)
+            total = ing.cantidad * cant_comensales
+            
+            lista_ingredientes.append({
+                'nombre': nombre_ingrediente,
+                'cantidad_total': round(total, 2),
+                'unidad': unidad_medida
+            })
+
+    # 3. Preparar los datos para el PDF
+    data = {
+        'comensales': cant_comensales,
+        'ingredientes': lista_ingredientes,
+        'fecha': request.GET.get('fecha', 'Hoy'),
+    }
+
+    # 4. Generar el PDF
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    
+    # --- LA CORRECCIÓN IMPORTANTE ---
+    # Si pdf existe, lo devolvemos. Si falló (es None), devolvemos un error de texto.
+    if pdf:
+        return pdf
+    
+    return HttpResponse("Error generando el PDF. Revisa la consola para más detalles.", status=500)

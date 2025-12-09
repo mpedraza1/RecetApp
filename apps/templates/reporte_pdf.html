@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Solicitud de Insumos - Coanil</title>
+    <style>
+        /* CONFIGURACIÓN DE PÁGINA */
+        @page {
+            size: A4; /* Tamaño carta */
+            margin: 2cm;
+            @frame footer_frame {           /* Espacio para el pie de página */
+                -pdf-frame-content: footerContent;
+                bottom: 1cm;
+                margin-left: 2cm;
+                margin-right: 2cm;
+                height: 1cm;
+            }
+        }
+
+        /* ESTILOS GENERALES */
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 12px;
+            color: #333333;
+        }
+
+        /* ENCABEZADO */
+        .header-bar {
+            background-color: #0056b3; /* Azul Coanil */
+            color: white;
+            padding: 10px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        .info-box {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .info-box td {
+            padding: 5px;
+            font-size: 14px;
+        }
+
+        .label {
+            font-weight: bold;
+            color: #0056b3;
+        }
+
+        /* TABLA DE INGREDIENTES */
+        .tabla-ingredientes {
+            width: 100%;
+            border-collapse: collapse; /* Borde simple */
+            margin-top: 10px;
+        }
+
+        .tabla-ingredientes th {
+            background-color: #f2f2f2;
+            border-bottom: 2px solid #0056b3;
+            color: #333;
+            font-weight: bold;
+            text-align: left;
+            padding: 8px;
+        }
+
+        .tabla-ingredientes td {
+            border-bottom: 1px solid #ddd;
+            padding: 8px;
+            vertical-align: top;
+        }
+
+        /* Filas alternas para mejor lectura (Zebra Striping) */
+        .tabla-ingredientes tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        /* Columna de números alineada a la derecha */
+        .num-col {
+            text-align: right;
+            font-weight: bold;
+        }
+
+        /* SECCIÓN DE FIRMAS */
+        .firmas {
+            margin-top: 60px;
+            width: 100%;
+        }
+        .linea-firma {
+            border-top: 1px solid #333;
+            width: 40%;
+            margin: 0 auto;
+            text-align: center;
+            padding-top: 5px;
+        }
+
+        /* PIE DE PÁGINA */
+        #footerContent {
+            text-align: center;
+            font-size: 10px;
+            color: #777;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        FUNDACIÓN COANIL - RECETAPP
+        <br>
+        <span style="font-size: 12px; font-weight: normal;">Informe de Solicitud de Insumos</span>
+    </div>
+
+    <table class="info-box">
+        <tr>
+            <td width="50%">
+                <span class="label">Fecha de Solicitud:</span> {{ fecha }}
+            </td>
+            <td width="50%" style="text-align: right;">
+                <span class="label">Total Comensales:</span> {{ comensales }}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                <span class="label">Recetas Incluidas:</span>
+                Lista consolidada
+            </td>
+        </tr>
+    </table>
+
+    <hr style="color: #ddd;">
+
+    <h3 style="color: #333; margin-bottom: 5px;">Detalle de Insumos Requeridos</h3>
+    
+    <table class="tabla-ingredientes">
+        <thead>
+            <tr>
+                <th width="50%">Ingrediente</th>
+                <th width="25%" style="text-align: right;">Cantidad Total</th>
+                <th width="25%" style="padding-left: 20px;">Unidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in ingredientes %}
+            <tr>
+                <td>{{ item.nombre|title }}</td> <td class="num-col">{{ item.cantidad_total }}</td>
+                <td style="padding-left: 20px;">{{ item.unidad }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center; padding: 20px;">
+                    No hay ingredientes para mostrar.
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <table class="firmas">
+        <tr>
+            <td>
+                <div class="linea-firma">
+                    Firma Responsable de Cocina
+                </div>
+            </td>
+            <td>
+                <div class="linea-firma">
+                    Firma Administración
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div id="footerContent">
+        Generado automáticamente por el sistema RecetApp - Fundación Coanil
+        <br>
+        Página <pdf:pagenumber>
+    </div>
+
+</body>
+</html>

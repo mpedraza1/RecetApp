@@ -121,7 +121,7 @@ class Ingredientes(models.Model):
     unidad_base = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'ingredientes'
 
 
@@ -133,7 +133,7 @@ class RecetaIngredientes(models.Model):
     unidad = models.CharField(max_length=20, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'receta_ingredientes'
         unique_together = (('id_receta', 'id_ingrediente'),)
 
@@ -147,7 +147,7 @@ class Recetas(models.Model):
     updated_at = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'recetas'
 
 
@@ -157,7 +157,7 @@ class Roles(models.Model):
     descripcion = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'roles'
 
 
@@ -166,7 +166,7 @@ class TiposComida(models.Model):
     nombre = models.CharField(max_length=50)
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'tipos_comida'
 
 
@@ -180,5 +180,5 @@ class Usuarios(models.Model):
     created_at = models.DateTimeField()
 
     class Meta:
-        managed = False
+        managed = True
         db_table = 'usuarios'
