@@ -327,6 +327,88 @@ def calcular_por_tipo(request):
                 comensales = 1
             
             receta_dos_id = data.get("receta_dos") 
+
+            if not receta_id:
+                return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+            # ========================================================
+            # 1. CONSOLIDACIÓN (Sumar ingredientes iguales)
+            # ========================================================
+            # Diccionario: Clave=(Nombre, Unidad) -> Valor=CantidadTotal
+            consolidador = {}
+
+            # Función auxiliar para procesar ingredientes de cualquier receta
+            def procesar_receta(id_receta):
+                try:
+                    r = Recetas.objects.get(id_receta=id_receta)
+                    items = RecetaIngredientes.objects.filter(id_receta=r)
+                    for item in items:
+                        nombre = item.id_ingrediente.nombre
+                        unidad = str(item.unidad) if item.unidad else ""
+                        cantidad_total = item.cantidad * comensales
+                        
+                        llave = (nombre, unidad)
+                        if llave in consolidador:
+                            consolidador[llave] += cantidad_total
+                        else:
+                            consolidador[llave] = cantidad_total
+                except Recetas.DoesNotExist:
+                    pass
+
+            # Procesamos Receta 1
+            procesar_receta(receta_id)
+
+            # Procesamos Receta 2 (si existe)
+            if receta_dos_id:
+                procesar_receta(receta_dos_id)
+
+            # ========================================================
+            # 2. GENERAR LISTA FINAL FORMATEADA
+            # ========================================================
+            calculo_final = []
+
+            for (nombre, unidad_orig), cantidad_total_num in consolidador.items():
+                
+                # A. Formatear Total (convertir a Kg/Litros si corresponde)
+                cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total_num, unidad_orig)
+
+                # B. Calcular Base Teórica (Total / Comensales) para mostrar en la tabla
+                # Esto es necesario porque al sumar, la "base" individual se pierde.
+                base_teorica = cantidad_total_num / comensales
+                base_fmt = f"{int(base_teorica):_}".replace("_", ".") + " " + unidad_orig
+
+                calculo_final.append({
+                    "ingrediente": nombre,
+                    "cantidad_base": base_fmt,
+                    "unidad": unidad_total_fmt,
+                    "cantidad_total": cant_total_fmt
+                })
+
+            # Ordenar alfabéticamente
+            calculo_final.sort(key=lambda x: x['ingrediente'])
+
+            # Devolvemos TODO en 'calculo'. 'calculo_dos' va vacío.
+            # Tu JS actual pintará 'calculo' y como 'calculo_dos' es null, no hará nada extra.
+            return JsonResponse({"calculo": calculo_final, "calculo_dos": None})
+
+        except Exception as e:
+            print(f"Error servidor: {e}") 
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+
+            receta_id = data.get("receta_id")
+            try:
+                comensales = int(data.get("comensales", 1))
+            except (ValueError, TypeError):
+                comensales = 1
+            
+            receta_dos_id = data.get("receta_dos") 
             tipo_dos_raw = data.get("tipo_dos")
 
             if not receta_id:
@@ -911,6 +993,71 @@ def editar_usuario_admin(request, id_usuario):
     return redirect('usuarios')
 
 def generar_informe_pdf(request):
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
+
+    fecha_raw = request.GET.get('fecha', '')
+    fecha_final = timezone.now().strftime("%d/%m/%Y")
+    if fecha_raw:
+        try:
+            fecha_final = datetime.strptime(fecha_raw, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except ValueError:
+            pass
+
+    raw_ids = request.GET.get('recetas', '')
+    receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()] if raw_ids else []
+
+    ingredientes_consolidados = {}
+    nombres_recetas_str = "Ninguna"
+
+    if receta_ids:
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
+        
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
+
+        # --- LÓGICA DE SUMA ---
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+            cantidad_total = item.cantidad * cant_comensales
+            
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # --- LÓGICA DE FORMATO ---
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        
+        # Usamos la misma función inteligente que la tabla
+        cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad, unidad)
+
+        lista_final.append({
+            'nombre': nombre,
+            'cantidad_total': cant_fmt,
+            'unidad': unidad_fmt
+        })
+
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    data = {
+        'comensales': cant_comensales,
+        'nombres_recetas': nombres_recetas_str,
+        'ingredientes': lista_final,
+        'fecha': fecha_final,
+    }
+
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    if pdf:
+        return HttpResponse(pdf, content_type='application/pdf')
+    
+    return HttpResponse("Error al generar el PDF", status=500)
     # 1. Datos básicos
     try:
         cant_comensales = int(request.GET.get('comensales', 1))

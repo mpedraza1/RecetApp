@@ -143,15 +143,14 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // =========================================================
-    // 1. CONFIGURACIÓN DE IDs (¡MODIFICA ESTO SEGÚN TU BD!)
+    // 1. CONFIGURACIÓN DE IDs (¡REVISA ESTO CON TU BASE DE DATOS!)
     // =========================================================
-    // Mira en tu tabla TiposComida qué ID tiene cada uno.
-    // Ejemplo: Si Almuerzo es el ID 2 y Acompañamiento es el ID 3:
-    const ID_PROTEINA = 2; // <--- PON AQUÍ EL ID DE "ALMUERZO" O "PLATO DE FONDO"
-    const ID_GUARNICION = 3; // <--- PON AQUÍ EL ID DE "ACOMPAÑAMIENTO" O "GUARNICIÓN"
+    const ID_PROTEINA = 2; // Ejemplo: Almuerzo - Fondo
+    const ID_GUARNICION = 3; // Ejemplo: Almuerzo - Acompañamiento
+    const ID_COMPUESTO = 5; // Ejemplo: Almuerzo - Completo
 
-    // IDs que bloquean totalmente la segunda fila (ej: Desayuno, Once)
-    const dashabilitados = [1, 4];
+    // IDs que bloquean totalmente la segunda fila
+    const dashabilitados = [1, 4, ID_COMPUESTO];
 
     // =========================================================
     // 2. SELECTORES
@@ -171,66 +170,95 @@
     const tbody = document.getElementById("tbodyIngredientes");
 
     // =========================================================
-    // 3. LÓGICA DE FILTRADO CRUZADO (FILA 1 -> FILA 2)
+    // 3. FUNCIÓN DE MENSAJE AMIGABLE (MEJORADA)
     // =========================================================
+    const toggleMensajeAyuda = (mostrar) => {
+      let msg = document.getElementById("msg-ayuda-fila2");
 
+      if (mostrar) {
+        if (!msg) {
+          // Creamos un contenedor de ancho completo
+          msg = document.createElement("div");
+          msg.id = "msg-ayuda-fila2";
+          msg.className = "col-12 text-center mt-3"; // Centrado y con margen arriba
+
+          // Contenido: Un mensaje estilo "Alerta Suave"
+          msg.innerHTML = `
+                    <div class="alert alert-success py-2 d-inline-block shadow-sm" style="border-radius: 20px;">
+                        <i class="bi bi-check-circle-fill me-2"></i> 
+                        ¡Listo! Esta opción es un menú completo. 
+                        <strong>No necesitas seleccionar nada en esta fila.</strong>
+                    </div>
+                `;
+
+          // Buscamos la FILA (row) donde están los selects 2 para pegarlo abajo
+          const parentRow = selectTipo2.closest(".row");
+          if (parentRow) {
+            parentRow.appendChild(msg);
+          }
+        }
+      } else {
+        if (msg) msg.remove();
+      }
+    };
+
+    // =========================================================
+    // 4. LÓGICA PRINCIPAL (Cambio en Fila 1)
+    // =========================================================
     if (selectTipo) {
       selectTipo.addEventListener("change", function () {
-        const tipoId = parseInt(this.value); // Convertimos a número para comparar
+        const tipoId = parseInt(this.value);
 
-        // A. Limpieza inicial de Fila 1 y Fila 2
+        // A. Limpieza inicial
         selectReceta.innerHTML = `<option value="">Cargando...</option>`;
-
-        // Reseteamos la Fila 2
         selectTipo2.value = "";
         selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
-        selectReceta2.disabled = true; // Se habilitará abajo si corresponde
 
-        // Si no hay selección, salimos
+        // Bloqueo preventivo
+        selectTipo2.disabled = true;
+        selectReceta2.disabled = true;
+
         if (!tipoId) {
           selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
-          selectTipo2.disabled = true;
+          toggleMensajeAyuda(false);
           return;
         }
 
-        // B. Lógica de Habilitación y Filtrado de Fila 2
+        // B. Decisión: ¿Bloquear o Habilitar?
         if (dashabilitados.includes(tipoId)) {
-          // CASO 1: Desayuno u Once -> Fila 2 Muerte
+          // CASO 1: Bloqueado (Desayuno/Once/Compuesto)
           selectTipo2.disabled = true;
+          selectReceta2.disabled = true;
+
+          // Mostrar mensaje centrado abajo
+          toggleMensajeAyuda(true);
         } else {
-          // CASO 2: Almuerzo o Guarnición -> Fila 2 Viva
+          // CASO 2: Habilitado (Proteína/Guarnición)
+          toggleMensajeAyuda(false); // Ocultar mensaje
+
           selectTipo2.disabled = false;
           selectReceta2.disabled = false;
 
-          // --- AQUÍ ESTÁ LA MAGIA DEL FILTRO ---
-          // 1. Primero mostramos todas las opciones de la lista 2 (reset visual)
-          Array.from(selectTipo2.options).forEach((option) => {
-            option.hidden = false;
-          });
+          // Reset visual (mostrar todo)
+          Array.from(selectTipo2.options).forEach(
+            (option) => (option.hidden = false)
+          );
 
-          // 2. Aplicamos el filtro cruzado
+          // Filtro Cruzado
           if (tipoId === ID_PROTEINA) {
-            // Si Fila 1 es Proteína, Fila 2 SOLO muestra Guarnición
-            // Ocultamos todo lo que NO sea Guarnición (y que no sea el placeholder vacío)
             Array.from(selectTipo2.options).forEach((option) => {
-              if (option.value != ID_GUARNICION && option.value != "") {
+              if (option.value != ID_GUARNICION && option.value != "")
                 option.hidden = true;
-              }
             });
-            // Auto-seleccionamos Guarnición si quieres ser más proactivo (opcional)
-            // selectTipo2.value = ID_GUARNICION;
-            // selectTipo2.dispatchEvent(new Event('change'));
           } else if (tipoId === ID_GUARNICION) {
-            // Si Fila 1 es Guarnición, Fila 2 SOLO muestra Proteína
             Array.from(selectTipo2.options).forEach((option) => {
-              if (option.value != ID_PROTEINA && option.value != "") {
+              if (option.value != ID_PROTEINA && option.value != "")
                 option.hidden = true;
-              }
             });
           }
         }
 
-        // C. Cargar Recetas de Fila 1 (AJAX)
+        // C. Cargar recetas Fila 1
         fetch(`/recetas-por-tipo/${tipoId}/`)
           .then((r) => r.json())
           .then((data) => {
@@ -244,7 +272,7 @@
     }
 
     // =========================================================
-    // 4. LÓGICA DE CARGA RECETAS FILA 2 (Normal)
+    // 5. LÓGICA DE CARGA RECETAS FILA 2 (Sin cambios)
     // =========================================================
     if (selectTipo2) {
       selectTipo2.addEventListener("change", function () {
@@ -264,12 +292,12 @@
               selectReceta2.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
             });
           })
-          .catch((e) => console.error("Error cargando recetas 2:", e));
+          .catch((e) => console.error(e));
       });
     }
 
     // =========================================================
-    // 5. BOTÓN CALCULAR (Igual que antes)
+    // 6. BOTÓN CALCULAR (Tabla)
     // =========================================================
     if (botonCalcular) {
       botonCalcular.addEventListener("click", function () {
@@ -304,7 +332,7 @@
           },
         })
           .then((response) => {
-            if (!response.ok) throw new Error("Error en el servidor");
+            if (!response.ok) throw new Error("Err");
             return response.json();
           })
           .then((data) => {
@@ -326,14 +354,13 @@
             seccionIngredientes.style.display = "block";
           })
           .catch((error) => {
-            console.error(error);
             alert("Error al calcular.");
           });
       });
     }
 
     // =========================================================
-    // 6. BOTÓN INFORME (Igual que antes)
+    // 7. BOTÓN INFORME (PDF)
     // =========================================================
     if (btnInforme) {
       btnInforme.addEventListener("click", function () {
