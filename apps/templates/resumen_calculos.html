@@ -128,8 +128,8 @@
           <tr>
             <th>Ingrediente</th>
             <th>Cantidad Base</th>
-            <th>Unidad</th>
             <th>Cantidad Total</th>
+            <th>Unidad</th>
           </tr>
         </thead>
         <tbody id="tbodyIngredientes">
@@ -142,172 +142,221 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    let calculo = false;
+    // =========================================================
+    // 1. CONFIGURACIÓN DE IDs (¡MODIFICA ESTO SEGÚN TU BD!)
+    // =========================================================
+    // Mira en tu tabla TiposComida qué ID tiene cada uno.
+    // Ejemplo: Si Almuerzo es el ID 2 y Acompañamiento es el ID 3:
+    const ID_PROTEINA = 2; // <--- PON AQUÍ EL ID DE "ALMUERZO" O "PLATO DE FONDO"
+    const ID_GUARNICION = 3; // <--- PON AQUÍ EL ID DE "ACOMPAÑAMIENTO" O "GUARNICIÓN"
+
+    // IDs que bloquean totalmente la segunda fila (ej: Desayuno, Once)
     const dashabilitados = [1, 4];
+
+    // =========================================================
+    // 2. SELECTORES
+    // =========================================================
     const selectTipo = document.getElementById("tipoComida");
     const selectReceta = document.getElementById("receta");
+
     const selectTipo2 = document.getElementById("tipoComida2");
     const selectReceta2 = document.getElementById("receta2");
+
     const botonCalcular = document.getElementById("calcular");
-    const seccionIngredientes = document.getElementById("seccionIngredientes");
-
-    selectTipo.addEventListener("change", function () {
-      const tipoId = this.value;
-      console.log("Tipo de comida seleccionado:", tipoId);
-      selectReceta.innerHTML = `<option value="">Cargando...</option>`;
-
-      if (!tipoId) {
-        selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
-        return;
-      }
-
-      if (dashabilitados.includes(parseInt(tipoId))) {
-        document.getElementById("tipoComida2").disabled = true;
-        document.getElementById("receta2").disabled = true;
-      } else {
-        document.getElementById("tipoComida2").disabled = false;
-        document.getElementById("receta2").disabled = false;
-      }
-
-      fetch(`/recetas-por-tipo/${tipoId}/`)
-        .then((response) => response.json())
-        .then((data) => {
-          selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
-          data.forEach((receta) => {
-            selectReceta.innerHTML += `
-                        <option value="${receta.id_receta}">${receta.nombre}</option>
-                    `;
-          });
-        })
-        .catch(() => {
-          selectReceta.innerHTML = `<option value="">Error al cargar</option>`;
-        });
-    });
-    botonCalcular.addEventListener("click", function () {
-      const tipoId = selectTipo.value;
-      const recetaId = selectReceta.value;
-      const csrfToken = document.querySelector(
-        'input[name="csrfmiddlewaretoken"]'
-      ).value;
-
-      if (!tipoId || !recetaId) {
-        alert("Por favor, seleccione un tipo de comida y una receta.");
-        return;
-      }
-
-      fetch(`/calcular-por-tipo/`, {
-        method: "POST",
-        body: JSON.stringify({
-          receta_id: recetaId,
-          comensales: document.querySelector('[name="comensales"]').value,
-          receta_dos: selectReceta2.value,
-          tipo_dos: selectTipo2.value,
-        }),
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": csrfToken,
-        },
-      })
-        .then((response) => response.json())
-        .then((data) => {
-          console.log("Cálculo recibido:", data);
-          calculo = true;
-          // El cálculo viene como: { calculo: [ {..}, {..}, ... ] }
-          const items = data.calculo;
-
-          const tbody = document.getElementById("tbodyIngredientes");
-
-          // Limpiar tabla antes de agregar
-          tbody.innerHTML = "";
-
-          // Rellenar tabla
-          items.forEach((item) => {
-            tbody.innerHTML += `
-                        <tr>
-                            <td>${item.ingrediente}</td>
-                            <td>${item.cantidad_base}</td>
-                            <td>${item.unidad}</td>
-                            <td class="fw-bold text-primary">${item.cantidad_total}</td>
-                        </tr>
-                    `;
-          });
-
-          seccionIngredientes.style.display = "block";
-        })
-        .catch(() => {
-          alert("Error al realizar el cálculo.");
-        });
-    });
-    selectTipo2.addEventListener("change", function () {
-      const tipoId = this.value;
-      console.log("Tipo de comida 2 seleccionado:", tipoId);
-      selectReceta2.innerHTML = `<option value="">Cargando...</option>`;
-
-      if (!tipoId) {
-        selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
-        return;
-      }
-
-      fetch(`/recetas-por-tipo/${tipoId}/`)
-        .then((response) => response.json())
-        .then((data) => {
-          selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
-          data.forEach((receta) => {
-            selectReceta2.innerHTML += `
-                    <option value="${receta.id_receta}">${receta.nombre}</option>
-                `;
-          });
-        })
-        .catch(() => {
-          selectReceta2.innerHTML = `<option value="">Error al cargar</option>`;
-        });
-    });
-  });
-
-  /*document.addEventListener("DOMContentLoaded", function () {
-    cargarRecetas("tipoComida", "receta");      // Primer bloque
-    cargarRecetas("tipoComida2", "receta2");    // Segundo bloque
-});*/
-  // Esperamos a que todo el HTML esté cargado
-  document.addEventListener("DOMContentLoaded", function () {
-    // 1. Buscamos el botón de forma segura
     const btnInforme = document.getElementById("btn-generar-informe");
+    const inputComensales = document.getElementById("input-comensales");
+    const inputFecha = document.querySelector('input[name="fecha_receta"]');
 
-    // 2. Solo si el botón existe, le asignamos la función
+    const seccionIngredientes = document.getElementById("seccionIngredientes");
+    const tbody = document.getElementById("tbodyIngredientes");
+
+    // =========================================================
+    // 3. LÓGICA DE FILTRADO CRUZADO (FILA 1 -> FILA 2)
+    // =========================================================
+
+    if (selectTipo) {
+      selectTipo.addEventListener("change", function () {
+        const tipoId = parseInt(this.value); // Convertimos a número para comparar
+
+        // A. Limpieza inicial de Fila 1 y Fila 2
+        selectReceta.innerHTML = `<option value="">Cargando...</option>`;
+
+        // Reseteamos la Fila 2
+        selectTipo2.value = "";
+        selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+        selectReceta2.disabled = true; // Se habilitará abajo si corresponde
+
+        // Si no hay selección, salimos
+        if (!tipoId) {
+          selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
+          selectTipo2.disabled = true;
+          return;
+        }
+
+        // B. Lógica de Habilitación y Filtrado de Fila 2
+        if (dashabilitados.includes(tipoId)) {
+          // CASO 1: Desayuno u Once -> Fila 2 Muerte
+          selectTipo2.disabled = true;
+        } else {
+          // CASO 2: Almuerzo o Guarnición -> Fila 2 Viva
+          selectTipo2.disabled = false;
+          selectReceta2.disabled = false;
+
+          // --- AQUÍ ESTÁ LA MAGIA DEL FILTRO ---
+          // 1. Primero mostramos todas las opciones de la lista 2 (reset visual)
+          Array.from(selectTipo2.options).forEach((option) => {
+            option.hidden = false;
+          });
+
+          // 2. Aplicamos el filtro cruzado
+          if (tipoId === ID_PROTEINA) {
+            // Si Fila 1 es Proteína, Fila 2 SOLO muestra Guarnición
+            // Ocultamos todo lo que NO sea Guarnición (y que no sea el placeholder vacío)
+            Array.from(selectTipo2.options).forEach((option) => {
+              if (option.value != ID_GUARNICION && option.value != "") {
+                option.hidden = true;
+              }
+            });
+            // Auto-seleccionamos Guarnición si quieres ser más proactivo (opcional)
+            // selectTipo2.value = ID_GUARNICION;
+            // selectTipo2.dispatchEvent(new Event('change'));
+          } else if (tipoId === ID_GUARNICION) {
+            // Si Fila 1 es Guarnición, Fila 2 SOLO muestra Proteína
+            Array.from(selectTipo2.options).forEach((option) => {
+              if (option.value != ID_PROTEINA && option.value != "") {
+                option.hidden = true;
+              }
+            });
+          }
+        }
+
+        // C. Cargar Recetas de Fila 1 (AJAX)
+        fetch(`/recetas-por-tipo/${tipoId}/`)
+          .then((r) => r.json())
+          .then((data) => {
+            selectReceta.innerHTML = `<option value="">Seleccione una receta</option>`;
+            data.forEach((r) => {
+              selectReceta.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
+            });
+          })
+          .catch((e) => console.error("Error cargando recetas 1:", e));
+      });
+    }
+
+    // =========================================================
+    // 4. LÓGICA DE CARGA RECETAS FILA 2 (Normal)
+    // =========================================================
+    if (selectTipo2) {
+      selectTipo2.addEventListener("change", function () {
+        const tipoId = this.value;
+        selectReceta2.innerHTML = `<option value="">Cargando...</option>`;
+
+        if (!tipoId) {
+          selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+          return;
+        }
+
+        fetch(`/recetas-por-tipo/${tipoId}/`)
+          .then((r) => r.json())
+          .then((data) => {
+            selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+            data.forEach((r) => {
+              selectReceta2.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
+            });
+          })
+          .catch((e) => console.error("Error cargando recetas 2:", e));
+      });
+    }
+
+    // =========================================================
+    // 5. BOTÓN CALCULAR (Igual que antes)
+    // =========================================================
+    if (botonCalcular) {
+      botonCalcular.addEventListener("click", function () {
+        const csrfToken = document.querySelector(
+          'input[name="csrfmiddlewaretoken"]'
+        ).value;
+
+        if (!selectReceta.value) {
+          alert("Por favor, seleccione al menos la primera receta.");
+          return;
+        }
+
+        const payload = {
+          receta_id: selectReceta.value,
+          comensales: inputComensales.value || 1,
+          receta_dos:
+            !selectReceta2.disabled && selectReceta2.value
+              ? selectReceta2.value
+              : null,
+          tipo_dos:
+            !selectTipo2.disabled && selectTipo2.value
+              ? selectTipo2.value
+              : null,
+        };
+
+        fetch(`/calcular-por-tipo/`, {
+          method: "POST",
+          body: JSON.stringify(payload),
+          headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": csrfToken,
+          },
+        })
+          .then((response) => {
+            if (!response.ok) throw new Error("Error en el servidor");
+            return response.json();
+          })
+          .then((data) => {
+            tbody.innerHTML = "";
+            const dibujarFilas = (lista) => {
+              if (!lista) return;
+              lista.forEach((item) => {
+                tbody.innerHTML += `
+                      <tr>
+                          <td>${item.ingrediente}</td>
+                          <td>${item.cantidad_base}</td>
+                          <td class="fw-bold text-primary">${item.cantidad_total}</td>
+                          <td>${item.unidad}</td>
+                      </tr>`;
+              });
+            };
+            if (data.calculo) dibujarFilas(data.calculo);
+            if (data.calculo_dos) dibujarFilas(data.calculo_dos);
+            seccionIngredientes.style.display = "block";
+          })
+          .catch((error) => {
+            console.error(error);
+            alert("Error al calcular.");
+          });
+      });
+    }
+
+    // =========================================================
+    // 6. BOTÓN INFORME (Igual que antes)
+    // =========================================================
     if (btnInforme) {
       btnInforme.addEventListener("click", function () {
-        // --- AQUÍ VA TU LÓGICA DE RECOPILAR DATOS ---
+        let comensales = inputComensales.value || 1;
+        let fecha = inputFecha ? inputFecha.value : "";
+        let ids = [];
 
-        // Verificamos también que los inputs existan para evitar el otro error de 'value'
-        const inputComensales = document.getElementById("input-comensales");
-        const inputFecha = document.getElementById("input-fecha"); // Asegúrate que tu input de fecha tenga este ID
-
-        if (inputComensales) {
-          let comensales = inputComensales.value || 1; // Si está vacío, usa 1
-          let fecha = inputFecha ? inputFecha.value : "";
-
-          // Aquí deberías tener tu array de IDs de recetas seleccionadas.
-          // Si lo tienes en una variable global (ej: recetasSeleccionadas), úsala.
-          // Si no, asegúrate de capturarlo correctamente.
-          // Ejemplo temporal:
-          // let recetasString = recetasSeleccionadas.join(',');
-
-          // PARA PROBAR QUE FUNCIONA: Vamos a poner datos fijos primero
-          let recetasString = "1"; // Prueba con un ID fijo si no tienes la lista a mano
-
-          // Abrir PDF
-          window.open(
-            `/generar-informe/?comensales=${comensales}&recetas=${recetasString}&fecha=${fecha}`,
-            "_blank"
-          );
-        } else {
-          console.error("No se encontró el input de comensales");
+        if (selectReceta.value) ids.push(selectReceta.value);
+        if (selectReceta2 && !selectReceta2.disabled && selectReceta2.value) {
+          ids.push(selectReceta2.value);
         }
+
+        if (ids.length === 0) {
+          alert("Selecciona una receta primero.");
+          return;
+        }
+        window.open(
+          `/generar-informe/?comensales=${comensales}&recetas=${ids.join(
+            ","
+          )}&fecha=${fecha}`,
+          "_blank"
+        );
       });
-    } else {
-      console.error(
-        "El botón 'btn-generar-informe' aún no se encuentra en el HTML"
-      );
     }
   });
 </script>

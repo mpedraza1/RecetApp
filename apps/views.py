@@ -14,6 +14,7 @@ from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm, UsuarioAdmin
 import json
 from .utils import render_to_pdf
 from django.db.models import F
+from datetime import datetime
 
 @login_personalizado_required
 @transaction.atomic # ⬅️ USAMOS EL DECORADOR PARA TRANSACCIÓN
@@ -245,61 +246,351 @@ def resumen_calculos(request):
 
     return render(request, "resumen_calculos.html", context)
 
-# def calcular_por_tipo(request):
-#     if request.method == "POST":
+def formatear_cantidad_inteligente(cantidad, nombre_unidad):
+    """
+    1. Convierte gr -> Kg y ml -> Litros si es >= 1000.
+    2. Si el número final es entero (ej: 42.0), muestra "42" (sin ,00).
+    3. Si tiene decimales (ej: 1.8), muestra "1,8" (quitando el 0 extra del final).
+    """
+    u = str(nombre_unidad).lower().strip()
+    val = cantidad
+    new_unit = nombre_unidad
 
-#         data = json.loads(request.body.decode("utf-8"))
+    # --- 1. Lógica de Conversión de Unidad ---
+    if u in ['gr', 'g', 'gramo', 'gramos'] and cantidad >= 1000:
+        val = cantidad / 1000
+        new_unit = "Kg"
+    elif u in ['ml', 'cc', 'mililitro', 'mililitros'] and cantidad >= 1000:
+        val = cantidad / 1000
+        new_unit = "Litros"
 
-#         receta_id = data.get("receta_id")
-#         comensales = int(data.get("comensales", 1))
-        
-#         receta_dos = data.get("receta_dos")
-#         tipo_dos = int(data.get("tipo_dos"))
-
-#         if not receta_id:
-#             return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-#         try:
-#             receta = Recetas.objects.get(id_receta=receta_id)
-#             ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-#             calculo_dos = None
-            
-#             if receta_dos and tipo_dos:
-#                 receta_dos = Recetas.objects.get(id_receta=receta_dos, id_tipo_comida=tipo_dos)
-#                 ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-#                 calculo_dos = []
-#                 for item in ingredientes_receta_dos:
-#                     cantidad_total_dos = item.cantidad * comensales
-#                     calculo_dos.append({
-#                         "ingrediente": item.id_ingrediente.nombre,
-#                         "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-#                         "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
-#                         "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
-#                     })
-                    
-#         except Recetas.DoesNotExist:
-#             return JsonResponse({"error": f"La receta {receta_id} no existe"}, status=404)
-
-
-        
-#         calculo = []
-#         for item in ingredientes_receta:
-#             cantidad_total = item.cantidad * comensales
-#             calculo.append({
-#                 "ingrediente": item.id_ingrediente.nombre,
-#                 "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-#                 "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
-#                 "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
-#             })
-        
-
-            
-#         return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+    # --- 2. Lógica de Formateo Visual (EL ARREGLO) ---
     
-#     return JsonResponse({"error": "Método no permitido"}, status=405)
+    # Caso A: Es un número entero exacto (Ej: 42.0 o 600)
+    if val == int(val):
+        # Retornamos entero con punto de miles (Ej: "1.200" o "42")
+        return f"{int(val):_}".replace('_', '.'), new_unit
+    
+    # Caso B: Tiene decimales reales (Ej: 1.8 o 1.25)
+    else:
+        # Formateamos a 2 decimales, cambiamos punto por coma, 
+        # y quitamos los ceros a la derecha.
+        # Ej: 1.8 -> "1.80" -> "1,80" -> "1,8"
+        texto = f"{val:.2f}".replace('.', ',').rstrip('0').rstrip(',')
+        return texto, new_unit
+    
+    
+   
+    u = str(nombre_unidad).lower().strip()
+    
+    # Lógica Kilos y Litros (Permite decimales útiles como 1,5)
+    if u in ['gr', 'g', 'gramo', 'gramos'] and cantidad >= 1000:
+        val = cantidad / 1000
+        return f"{val:g}".replace('.', ','), "Kg"
+
+    if u in ['ml', 'cc', 'mililitro', 'mililitros'] and cantidad >= 1000:
+        val = cantidad / 1000
+        return f"{val:g}".replace('.', ','), "Litros"
+
+    # Lógica por defecto: SIEMPRE ENTERO (Sin decimales)
+    return f"{int(cantidad):_}".replace('_', '.'), nombre_unidad
+
+
+    
+    # 1. Normalizar texto (minusculas y sin espacios)
+    u = str(nombre_unidad).lower().strip()
+    
+    # 2. Lógica Gramos -> Kilos
+    if u in ['gr', 'g', 'gramo', 'gramos'] and cantidad >= 1000:
+        nueva_cant = cantidad / 1000
+        # :g elimina ceros innecesarios (1.50 -> 1.5)
+        return f"{nueva_cant:g}".replace('.', ','), "Kg"
+
+    # 3. Lógica Mililitros -> Litros
+    if u in ['ml', 'cc', 'mililitro', 'mililitros'] and cantidad >= 1000:
+        nueva_cant = cantidad / 1000
+        return f"{nueva_cant:g}".replace('.', ','), "Litros"
+
+    # 4. Retorno por defecto (Entero con punto de miles)
+    return f"{int(cantidad):_}".replace('_', '.'), nombre_unidad
+
 
 def calcular_por_tipo(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+
+            receta_id = data.get("receta_id")
+            try:
+                comensales = int(data.get("comensales", 1))
+            except (ValueError, TypeError):
+                comensales = 1
+            
+            receta_dos_id = data.get("receta_dos") 
+            tipo_dos_raw = data.get("tipo_dos")
+
+            if not receta_id:
+                return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+            # --- RECETA 1 ---
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo = []
+            for item in ingredientes_receta:
+                cantidad_total = item.cantidad * comensales
+                unidad_orig = str(item.unidad) if item.unidad else ""
+                
+                # 1. Formateamos el total (Conversión a Kg/Litros o Entero)
+                cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total, unidad_orig)
+
+                # 2. Formateamos la base (Número Entero + Unidad Original)
+                base_fmt = f"{int(item.cantidad):_}".replace("_", ".") + " " + unidad_orig
+
+                calculo.append({
+                    "ingrediente": item.id_ingrediente.nombre,
+                    "cantidad_base": base_fmt,        # Ej: "200 gr"
+                    "unidad": unidad_total_fmt,       # Ej: "Kg" (La unidad del total)
+                    "cantidad_total": cant_total_fmt  # Ej: "1,5"
+                })
+
+            # --- RECETA 2 ---
+            calculo_dos = None
+            if receta_dos_id: 
+                try:
+                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
+                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                    
+                    calculo_dos = []
+                    for item in ingredientes_receta_dos:
+                        cantidad_total_dos = item.cantidad * comensales
+                        unidad_orig_dos = str(item.unidad) if item.unidad else ""
+
+                        cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total_dos, unidad_orig_dos)
+                        base_fmt_dos = f"{int(item.cantidad):_}".replace("_", ".") + " " + unidad_orig_dos
+
+                        calculo_dos.append({
+                            "ingrediente": item.id_ingrediente.nombre,
+                            "cantidad_base": base_fmt_dos,
+                            "unidad": unidad_total_fmt,
+                            "cantidad_total": cant_total_fmt
+                        })
+                except (Recetas.DoesNotExist, ValueError):
+                     pass 
+
+            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": "La receta principal no existe"}, status=404)
+        except Exception as e:
+            print(f"Error servidor: {e}") 
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+
+            receta_id = data.get("receta_id")
+            try:
+                comensales = int(data.get("comensales", 1))
+            except (ValueError, TypeError):
+                comensales = 1
+            
+            receta_dos_id = data.get("receta_dos") 
+            tipo_dos_raw = data.get("tipo_dos")
+
+            if not receta_id:
+                return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+            # --- RECETA 1 ---
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo = []
+            for item in ingredientes_receta:
+                cantidad_total = item.cantidad * comensales
+                unidad_original = str(item.unidad) if item.unidad else ""
+                
+                # APLICAMOS LA CONVERSIÓN AQUÍ
+                cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad_total, unidad_original)
+
+                calculo.append({
+                    "ingrediente": item.id_ingrediente.nombre,
+                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                    "unidad": unidad_fmt,        # Unidad convertida (si aplica)
+                    "cantidad_total": cant_fmt   # Cantidad convertida
+                })
+
+            # --- RECETA 2 ---
+            calculo_dos = None
+            if receta_dos_id: 
+                try:
+                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
+                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                    
+                    calculo_dos = []
+                    for item in ingredientes_receta_dos:
+                        cantidad_total_dos = item.cantidad * comensales
+                        unidad_original_dos = str(item.unidad) if item.unidad else ""
+
+                        # APLICAMOS LA CONVERSIÓN AQUÍ TAMBIÉN
+                        cant_fmt_dos, unidad_fmt_dos = formatear_cantidad_inteligente(cantidad_total_dos, unidad_original_dos)
+
+                        calculo_dos.append({
+                            "ingrediente": item.id_ingrediente.nombre,
+                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                            "unidad": unidad_fmt_dos,
+                            "cantidad_total": cant_fmt_dos
+                        })
+                except (Recetas.DoesNotExist, ValueError):
+                     pass 
+
+            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": "La receta principal no existe"}, status=404)
+        except Exception as e:
+            print(f"Error servidor: {e}") 
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+
+            receta_id = data.get("receta_id")
+            # Protección para comensales
+            try:
+                comensales = int(data.get("comensales", 1))
+            except (ValueError, TypeError):
+                comensales = 1
+            
+            receta_dos_id = data.get("receta_dos") 
+            tipo_dos_raw = data.get("tipo_dos")
+
+            if not receta_id:
+                return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+            # --- CÁLCULO RECETA 1 ---
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo = []
+            for item in ingredientes_receta:
+                cantidad_total = item.cantidad * comensales
+                calculo.append({
+                    "ingrediente": item.id_ingrediente.nombre,
+                    # FORZAMOS ENTERO EN CANTIDAD BASE
+                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                    "unidad": str(item.unidad) if item.unidad else "", 
+                    # FORZAMOS ENTERO EN CANTIDAD TOTAL
+                    "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
+                })
+
+            # --- CÁLCULO RECETA 2 ---
+            calculo_dos = None
+            
+            if receta_dos_id: 
+                try:
+                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
+                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                    
+                    calculo_dos = []
+                    for item in ingredientes_receta_dos:
+                        cantidad_total_dos = item.cantidad * comensales
+                        calculo_dos.append({
+                            "ingrediente": item.id_ingrediente.nombre,
+                            # FORZAMOS ENTERO EN CANTIDAD BASE
+                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                            "unidad": str(item.unidad) if item.unidad else "", 
+                            # FORZAMOS ENTERO EN CANTIDAD TOTAL
+                            "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
+                        })
+                except (Recetas.DoesNotExist, ValueError):
+                     pass 
+
+            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": "La receta principal no existe"}, status=404)
+        except Exception as e:
+            print(f"Error servidor: {e}") 
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body.decode("utf-8"))
+
+            receta_id = data.get("receta_id")
+            # Protección para comensales
+            try:
+                comensales = int(data.get("comensales", 1))
+            except (ValueError, TypeError):
+                comensales = 1
+            
+            receta_dos_id = data.get("receta_dos") 
+            tipo_dos_raw = data.get("tipo_dos")
+
+            if not receta_id:
+                return JsonResponse({"error": "No se envió receta_id"}, status=400)
+
+            # --- CÁLCULO RECETA 1 ---
+            receta = Recetas.objects.get(id_receta=receta_id)
+            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
+            
+            calculo = []
+            for item in ingredientes_receta:
+                cantidad_total = item.cantidad * comensales
+                calculo.append({
+                    "ingrediente": item.id_ingrediente.nombre,
+                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                    # CORRECCIÓN: Usamos str() para asegurar que sea texto, sin pedir .nombre
+                    "unidad": str(item.unidad) if item.unidad else "", 
+                    "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
+                })
+
+            # --- CÁLCULO RECETA 2 ---
+            calculo_dos = None
+            
+            # Solo procesamos si hay ID de segunda receta
+            if receta_dos_id: 
+                try:
+                    # Buscamos directamente por ID de receta
+                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
+                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
+                    
+                    calculo_dos = []
+                    for item in ingredientes_receta_dos:
+                        cantidad_total_dos = item.cantidad * comensales
+                        calculo_dos.append({
+                            "ingrediente": item.id_ingrediente.nombre,
+                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
+                            # CORRECCIÓN: Igual aquí, str(item.unidad)
+                            "unidad": str(item.unidad) if item.unidad else "", 
+                            "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
+                        })
+                except (Recetas.DoesNotExist, ValueError):
+                     pass 
+
+            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+
+        except Recetas.DoesNotExist:
+            return JsonResponse({"error": "La receta principal no existe"}, status=404)
+        except Exception as e:
+            print(f"Error servidor: {e}") 
+            return JsonResponse({"error": str(e)}, status=500)
+    
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+
     if request.method == "POST":
         try:
             data = json.loads(request.body.decode("utf-8"))
@@ -620,46 +911,360 @@ def editar_usuario_admin(request, id_usuario):
     return redirect('usuarios')
 
 def generar_informe_pdf(request):
-    # 1. Obtener datos
-    cant_comensales = int(request.GET.get('comensales', 1))
-    receta_ids = request.GET.get('recetas', '').split(',')
-    
-    lista_ingredientes = []
+    # 1. Datos básicos
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
 
-    # 2. Filtrar recetas (usando id_receta)
-    recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-    
-    for receta in recetas:
-        # Buscar los ingredientes de la receta
-        ingredientes_relacion = RecetaIngredientes.objects.filter(id_receta=receta)
+    fecha_raw = request.GET.get('fecha', '')
+    fecha_final = timezone.now().strftime("%d/%m/%Y")
+    if fecha_raw:
+        try:
+            fecha_final = datetime.strptime(fecha_raw, "%Y-%m-%d").strftime("%d/%m/%Y")
+        except ValueError:
+            pass
+
+    # 2. Recetas
+    raw_ids = request.GET.get('recetas', '')
+    receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()] if raw_ids else []
+
+    ingredientes_consolidados = {}
+    nombres_recetas_str = "Ninguna"
+
+    if receta_ids:
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
         
-        for ing in ingredientes_relacion:
-            # Obtener nombres y unidad
-            nombre_ingrediente = ing.id_ingrediente.nombre 
-            unidad_medida = ing.id_ingrediente.unidad_base
-            
-            # Cálculo directo (Multiplicación simple)
-            total = ing.cantidad * cant_comensales
-            
-            lista_ingredientes.append({
-                'nombre': nombre_ingrediente,
-                'cantidad_total': round(total, 2),
-                'unidad': unidad_medida
-            })
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
 
-    # 3. Preparar los datos para el PDF
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+            cantidad_total = item.cantidad * cant_comensales
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # 3. Formateo Final (AQUÍ ESTÁ EL CAMBIO)
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        
+        # Usamos la función inteligente para convertir si es necesario
+        cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad, unidad)
+
+        lista_final.append({
+            'nombre': nombre,
+            'cantidad_total': cant_fmt,
+            'unidad': unidad_fmt
+        })
+
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    # 4. Render
     data = {
         'comensales': cant_comensales,
-        'ingredientes': lista_ingredientes,
-        'fecha': request.GET.get('fecha', 'Hoy'),
+        'nombres_recetas': nombres_recetas_str,
+        'ingredientes': lista_final,
+        'fecha': fecha_final,
     }
 
-    # 4. Generar el PDF
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    if pdf:
+        return HttpResponse(pdf, content_type='application/pdf')
+    
+    return HttpResponse("Error al generar el PDF", status=500)
+
+
+    # 1. Obtener y validar comensales
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
+
+    # 2. Fecha
+    fecha_raw = request.GET.get('fecha', '')
+    if fecha_raw:
+        try:
+            fecha_obj = datetime.strptime(fecha_raw, "%Y-%m-%d")
+            fecha_final = fecha_obj.strftime("%d/%m/%Y")
+        except ValueError:
+            fecha_final = timezone.now().strftime("%d/%m/%Y")
+    else:
+        fecha_final = timezone.now().strftime("%d/%m/%Y")
+
+    # 3. Obtener IDs
+    raw_ids = request.GET.get('recetas', '')
+    if raw_ids:
+        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
+    else:
+        receta_ids = []
+
+    ingredientes_consolidados = {}
+    nombres_recetas_str = "Ninguna"
+
+    if receta_ids:
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
+        
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
+
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+            cantidad_total = item.cantidad * cant_comensales
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # 4. Convertir a lista y formatear números
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        lista_final.append({
+            'nombre': nombre,
+            # CAMBIO AQUÍ: Convertimos a int() y formateamos con puntos de mil
+            'cantidad_total': f"{int(cantidad):_}".replace("_", "."),
+            'unidad': unidad
+        })
+
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    # 5. Preparar contexto
+    data = {
+        'comensales': cant_comensales,
+        'nombres_recetas': nombres_recetas_str,
+        'ingredientes': lista_final,
+        'fecha': fecha_final,
+    }
+
+    # 6. Generar PDF
     pdf = render_to_pdf('reporte_pdf.html', data)
     
-    # --- LA CORRECCIÓN IMPORTANTE ---
-    # Si pdf existe, lo devolvemos. Si falló (es None), devolvemos un error de texto.
     if pdf:
-        return pdf
+        return HttpResponse(pdf, content_type='application/pdf')
     
-    return HttpResponse("Error generando el PDF. Revisa la consola para más detalles.", status=500)
+    return HttpResponse("Error al generar el PDF", status=500)
+    # 1. Obtener y validar comensales
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
+
+    # =========================================================
+    # 2. NUEVO: Obtener y formatear la fecha seleccionada
+    # =========================================================
+    fecha_raw = request.GET.get('fecha', '') # Viene como "YYYY-MM-DD"
+    
+    if fecha_raw:
+        try:
+            # Convertimos de formato HTML (2023-12-31) a objeto fecha
+            fecha_obj = datetime.strptime(fecha_raw, "%Y-%m-%d")
+            # Lo convertimos al formato chileno (31/12/2023)
+            fecha_final = fecha_obj.strftime("%d/%m/%Y")
+        except ValueError:
+            # Si la fecha viene malformada, usamos la de hoy
+            fecha_final = timezone.now().strftime("%d/%m/%Y")
+    else:
+        # Si el usuario no seleccionó fecha, usamos la de hoy
+        fecha_final = timezone.now().strftime("%d/%m/%Y")
+
+    # 3. Obtener y limpiar IDs de recetas
+    raw_ids = request.GET.get('recetas', '')
+    
+    if raw_ids:
+        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
+    else:
+        receta_ids = []
+
+    ingredientes_consolidados = {}
+    nombres_recetas_str = "Ninguna"
+
+    if receta_ids:
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        
+        # Nombres para el reporte
+        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
+        
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
+
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+            cantidad_total = item.cantidad * cant_comensales
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # 4. Convertir a lista y ordenar
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        lista_final.append({
+            'nombre': nombre,
+            'cantidad_total': f"{cantidad:g}".replace('.', ','),
+            'unidad': unidad
+        })
+
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    # 5. Preparar contexto
+    data = {
+        'comensales': cant_comensales,
+        'nombres_recetas': nombres_recetas_str,
+        'ingredientes': lista_final,
+        'fecha': fecha_final, # <--- Aquí pasamos la fecha procesada
+    }
+
+    # 6. Generar PDF
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    
+    if pdf:
+        return HttpResponse(pdf, content_type='application/pdf')
+    
+    return HttpResponse("Error al generar el PDF", status=500)
+    # 1. Obtener y validar comensales
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
+
+    # 2. Obtener y limpiar IDs de recetas
+    raw_ids = request.GET.get('recetas', '')
+    
+    if raw_ids:
+        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
+    else:
+        receta_ids = []
+
+    ingredientes_consolidados = {}
+    nombres_recetas_str = "Ninguna" # Valor por defecto
+
+    if receta_ids:
+        # Filtramos las recetas
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        
+        # --- NUEVO: Creamos una cadena de texto con los nombres ---
+        # Esto crea algo como: "Cazuela, Ensalada Surtida"
+        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
+        
+        # Buscamos TODOS los ingredientes
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
+
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            # Usamos str() para evitar el error de .nombre en objetos que no lo tienen
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+
+            cantidad_total = item.cantidad * cant_comensales
+
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # 3. Convertir a lista
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        lista_final.append({
+            'nombre': nombre,
+            'cantidad_total': f"{cantidad:g}".replace('.', ','),
+            'unidad': unidad
+        })
+
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    # 4. Preparar contexto (Agregamos 'nombres_recetas')
+    data = {
+        'comensales': cant_comensales,
+        'nombres_recetas': nombres_recetas_str, # <--- AQUÍ PASAMOS LOS NOMBRES
+        'ingredientes': lista_final,
+        'fecha': timezone.now().strftime("%d/%m/%Y"),
+    }
+
+    # 5. Generar PDF
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    
+    if pdf:
+        return HttpResponse(pdf, content_type='application/pdf')
+    
+    return HttpResponse("Error al generar el PDF", status=500)    # 1. Obtener y validar comensales
+    try:
+        cant_comensales = int(request.GET.get('comensales', 1))
+    except ValueError:
+        cant_comensales = 1
+
+    # 2. Obtener y limpiar IDs de recetas
+    raw_ids = request.GET.get('recetas', '')
+    
+    # Esto convierte "1,2,3" en [1, 2, 3] y evita errores con strings vacíos
+    if raw_ids:
+        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
+    else:
+        receta_ids = []
+
+    # Diccionario para consolidar (Sumar ingredientes iguales)
+    # Clave: (nombre_ingrediente, unidad) -> Valor: cantidad_acumulada
+    ingredientes_consolidados = {}
+
+    if receta_ids:
+        # Filtramos las recetas
+        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
+        
+        # Buscamos TODOS los ingredientes de esas recetas
+        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
+
+        for item in items_receta:
+            nombre = item.id_ingrediente.nombre
+            
+            # INTENTO DE OBTENER LA UNIDAD (Manejo de errores por inconsistencia de modelos)
+            # Prioridad 1: La unidad guardada en la relación (como en crear_receta)
+            # Prioridad 2: La unidad del ingrediente base
+            unidad = str(item.unidad) if item.unidad else "Unidad"
+
+            # Calculamos el total para este ítem
+            cantidad_total = item.cantidad * cant_comensales
+
+            # Lógica de Suma (Agrupación)
+            llave = (nombre, unidad)
+            
+            if llave in ingredientes_consolidados:
+                ingredientes_consolidados[llave] += cantidad_total
+            else:
+                ingredientes_consolidados[llave] = cantidad_total
+
+    # 3. Convertir el diccionario a una lista para el HTML
+    lista_final = []
+    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
+        lista_final.append({
+            'nombre': nombre,
+            'cantidad_total': f"{cantidad:g}".replace('.', ','), # Formato bonito (elimina ceros extra)
+            'unidad': unidad
+        })
+
+    # Ordenar alfabéticamente
+    lista_final.sort(key=lambda x: x['nombre'])
+
+    # 4. Preparar contexto
+    data = {
+        'comensales': cant_comensales,
+        'ingredientes': lista_final,
+        'fecha': timezone.now().strftime("%d/%m/%Y"), # Fecha actual automática
+    }
+
+    # 5. Generar PDF
+    pdf = render_to_pdf('reporte_pdf.html', data)
+    
+    if pdf:
+        return HttpResponse(pdf, content_type='application/pdf')
+    
+    return HttpResponse("Error al generar el PDF", status=500)
