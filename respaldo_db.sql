@@ -2453,3 +2453,16 @@ ALTER TABLE ONLY public.usuarios
 
 \unrestrict xpWkTtpamHbfThB3w50HffZvJb75eLaHikaJKdi7u3gdwLSrbLKAGdWg1rVsjZJ
 
+
+SQL
+
+-- --- OPTIMIZACIÓN: ÍNDICES B-TREE (Agregado por [Tu Nombre]) ---
+
+-- 1. Índice para buscar recetas por nombre
+CREATE INDEX IF NOT EXISTS idx_receta_nombre ON recetas (nombre);
+
+-- 2. Índice para filtrar por tipo de comida
+CREATE INDEX IF NOT EXISTS idx_receta_tipo ON recetas (id_tipo_comida);
+
+-- 3. Índice para acelerar el Login
+CREATE INDEX IF NOT EXISTS idx_usuario_correo ON usuarios (correo);

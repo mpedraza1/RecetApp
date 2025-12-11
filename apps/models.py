@@ -149,6 +149,10 @@ class Recetas(models.Model):
     class Meta:
         managed = True
         db_table = 'recetas'
+        indexes = [
+            models.Index(fields=['nombre'], name='idx_receta_nombre'),
+            models.Index(fields=['id_tipo_comida'], name='idx_receta_tipo_comida'),
+        ]
 
 
 class Roles(models.Model):
@@ -182,3 +186,6 @@ class Usuarios(models.Model):
     class Meta:
         managed = True
         db_table = 'usuarios'
+        indexes = [
+            models.Index(fields=['correo'], name='idx_usuario_correo'),
+        ]
