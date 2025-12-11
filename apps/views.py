@@ -178,59 +178,38 @@ def resumen_calculos(request):
 
     return render(request, "resumen_calculos.html", context)
 
-# def calcular_por_tipo(request):
-#     if request.method == "POST":
 
-#         data = json.loads(request.body.decode("utf-8"))
+def formatear_cantidad_inteligente(cantidad, nombre_unidad):
+    """
+    1. Convierte gr -> Kg y ml -> Litros si es >= 1000.
+    2. Si el número final es entero (ej: 42.0), muestra "42" (sin ,00).
+    3. Si tiene decimales (ej: 1.8), muestra "1,8" (quitando el 0 extra del final).
+    """
+    u = str(nombre_unidad).lower().strip()
+    val = cantidad
+    new_unit = nombre_unidad
 
-#         receta_id = data.get("receta_id")
-#         comensales = int(data.get("comensales", 1))
-        
-#         receta_dos = data.get("receta_dos")
-#         tipo_dos = int(data.get("tipo_dos"))
+    # --- 1. Lógica de Conversión de Unidad ---
+    if u in ['gr', 'g', 'gramo', 'gramos'] and cantidad >= 1000:
+        val = cantidad / 1000
+        new_unit = "Kg"
+    elif u in ['ml', 'cc', 'mililitro', 'mililitros'] and cantidad >= 1000:
+        val = cantidad / 1000
+        new_unit = "Litros"
 
-#         if not receta_id:
-#             return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-#         try:
-#             receta = Recetas.objects.get(id_receta=receta_id)
-#             ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-#             calculo_dos = None
-            
-#             if receta_dos and tipo_dos:
-#                 receta_dos = Recetas.objects.get(id_receta=receta_dos, id_tipo_comida=tipo_dos)
-#                 ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-#                 calculo_dos = []
-#                 for item in ingredientes_receta_dos:
-#                     cantidad_total_dos = item.cantidad * comensales
-#                     calculo_dos.append({
-#                         "ingrediente": item.id_ingrediente.nombre,
-#                         "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-#                         "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
-#                         "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
-#                     })
-                    
-#         except Recetas.DoesNotExist:
-#             return JsonResponse({"error": f"La receta {receta_id} no existe"}, status=404)
-
-
-        
-#         calculo = []
-#         for item in ingredientes_receta:
-#             cantidad_total = item.cantidad * comensales
-#             calculo.append({
-#                 "ingrediente": item.id_ingrediente.nombre,
-#                 "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-#                 "unidad": item.unidad,  # ajusta si tu modelo usa id_unidad
-#                 "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
-#             })
-        
-
-            
-#         return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
+    # --- 2. Lógica de Formateo Visual ---
     
-#     return JsonResponse({"error": "Método no permitido"}, status=405)
+    # Caso A: Es un número entero exacto (Ej: 42.0 o 600)
+    if val == int(val):
+        # Retornamos entero con punto de miles (Ej: "1.200" o "42")
+        return f"{int(val):_}".replace('_', '.'), new_unit
+    
+    # Caso B: Tiene decimales reales (Ej: 1.8 o 1.25)
+    else:
+        # Formateamos a 2 decimales, cambiamos punto por coma, 
+        # y quitamos los ceros a la derecha.
+        texto = f"{val:.2f}".replace('.', ',').rstrip('0').rstrip(',')
+        return texto, new_unit
 
 def calcular_por_tipo(request):
     if request.method == "POST":
