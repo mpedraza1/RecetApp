@@ -2,12 +2,12 @@
 -- PostgreSQL database dump
 --
 
-\restrict xpWkTtpamHbfThB3w50HffZvJb75eLaHikaJKdi7u3gdwLSrbLKAGdWg1rVsjZJ
+\restrict ZUqNcTQoag8RRN47MFQ5OYi4SxV9cxqEOUHbsk4MnadPwoAubExJdaGTdRXKjcy
 
 -- Dumped from database version 18.0
 -- Dumped by pg_dump version 18.0
 
--- Started on 2025-12-01 00:43:47
+-- Started on 2025-12-11 21:11:49
 
 SET statement_timeout = 0;
 SET lock_timeout = 0;
@@ -29,15 +29,7 @@ SET row_security = off;
 CREATE FUNCTION public.update_timestamp() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
-<<<<<<< HEAD
-<<<<<<< HEAD
-BEGINF
-=======
 BEGIN
->>>>>>> a6cff90f3278205f8c0648192075b6e3b5b31613
-=======
-BEGIN
->>>>>>> df08a899900f647994e326524f25a9bd6d047860
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
@@ -523,7 +515,7 @@ ALTER TABLE public.usuarios ALTER COLUMN id_usuario ADD GENERATED ALWAYS AS IDEN
 
 
 --
--- TOC entry 5180 (class 0 OID 24702)
+-- TOC entry 5183 (class 0 OID 24702)
 -- Dependencies: 238
 -- Data for Name: auth_group; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -533,7 +525,7 @@ COPY public.auth_group (id, name) FROM stdin;
 
 
 --
--- TOC entry 5182 (class 0 OID 24712)
+-- TOC entry 5185 (class 0 OID 24712)
 -- Dependencies: 240
 -- Data for Name: auth_group_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -543,7 +535,7 @@ COPY public.auth_group_permissions (id, group_id, permission_id) FROM stdin;
 
 
 --
--- TOC entry 5178 (class 0 OID 24692)
+-- TOC entry 5181 (class 0 OID 24692)
 -- Dependencies: 236
 -- Data for Name: auth_permission; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -641,7 +633,7 @@ COPY public.auth_permission (id, name, content_type_id, codename) FROM stdin;
 
 
 --
--- TOC entry 5184 (class 0 OID 24721)
+-- TOC entry 5187 (class 0 OID 24721)
 -- Dependencies: 242
 -- Data for Name: auth_user; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -651,7 +643,7 @@ COPY public.auth_user (id, password, last_login, is_superuser, username, first_n
 
 
 --
--- TOC entry 5186 (class 0 OID 24740)
+-- TOC entry 5189 (class 0 OID 24740)
 -- Dependencies: 244
 -- Data for Name: auth_user_groups; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -661,7 +653,7 @@ COPY public.auth_user_groups (id, user_id, group_id) FROM stdin;
 
 
 --
--- TOC entry 5188 (class 0 OID 24749)
+-- TOC entry 5191 (class 0 OID 24749)
 -- Dependencies: 246
 -- Data for Name: auth_user_user_permissions; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -671,7 +663,7 @@ COPY public.auth_user_user_permissions (id, user_id, permission_id) FROM stdin;
 
 
 --
--- TOC entry 5190 (class 0 OID 24810)
+-- TOC entry 5193 (class 0 OID 24810)
 -- Dependencies: 248
 -- Data for Name: django_admin_log; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -681,7 +673,7 @@ COPY public.django_admin_log (id, action_time, object_id, object_repr, action_fl
 
 
 --
--- TOC entry 5176 (class 0 OID 24680)
+-- TOC entry 5179 (class 0 OID 24680)
 -- Dependencies: 234
 -- Data for Name: django_content_type; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -713,7 +705,7 @@ COPY public.django_content_type (id, app_label, model) FROM stdin;
 
 
 --
--- TOC entry 5174 (class 0 OID 24668)
+-- TOC entry 5177 (class 0 OID 24668)
 -- Dependencies: 232
 -- Data for Name: django_migrations; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -738,22 +730,77 @@ COPY public.django_migrations (id, app, name, applied) FROM stdin;
 17	auth	0012_alter_user_first_name_max_length	2025-11-30 01:12:11.579278-03
 18	sessions	0001_initial	2025-11-30 01:12:11.585982-03
 19	apps	0001_initial	2025-11-30 14:29:17.654804-03
+20	apps	0002_alter_tiposcomida_options	2025-12-08 18:15:03.405003-03
 \.
 
 
 --
--- TOC entry 5191 (class 0 OID 24850)
+-- TOC entry 5194 (class 0 OID 24850)
 -- Dependencies: 249
 -- Data for Name: django_session; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.django_session (session_key, session_data, expire_date) FROM stdin;
-n48orcmk20a8nzqkltjrmct2p1ss1ffv	eyJ1c3VhcmlvX3RlbXBfaWQiOjJ9:1vPs0c:aueBNVc3dHc_Ys0bJsfvYSU22ORa3RzbUp_OujJ44KA	2025-12-14 21:43:18.410842-03
+i80zprz5wfosx6vf9mtc2qeadlnvee7v	.eJyrViotLk0sysyPz0xRsjLSgXPz8nOTilKVrJScUvOyEnMz8xSCE3MSqxKLlBBqivJzlKwMawFNohhW:1vQuwJ:YotRRuU7I1hXIIOC0LxErkW8Kn69Y2dt0UPa8JO_E3w	2025-12-17 19:03:11.294363-03
+pfudjjuq42ux8lztivr70tzxoz5kpk56	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vQvrx:QpL5gq-JebabUT3LY6xFvp7EtWHDmIEJX3J8RfpPkWI	2025-12-17 20:02:45.642581-03
+sml1mafkbmobmsmaq43z1v6htszl1s8e	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vQxZG:d4uHibw4xs94E-B94WZnN6PeldnTrF9_hfwl80tW6vE	2025-12-17 21:51:34.281902-03
+wb0kzrywhpd900m6m8t635vykyr7n1s8	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vRJ0g:Ojr1ruqw8PyFG-yuOaiseW_62wlGpXK6ti7Glo-ItUQ	2025-12-18 20:45:18.298228-03
+cwb49f3vg6qkqftma3o0zfeq3w9bkzob	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vRK10:PsSlNo8jP6t8r_q6hWuDRNAOQFRBWUhTrp96P5lO_vo	2025-12-18 21:49:42.634141-03
+6vajqtdi78bgu8mpygzh1srfjmr7euts	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkRz:IKpoFNvO3vAQ-x2OQObNuGmtWfG4i1gl_mPCISe6fzc	2025-12-22 20:15:27.949748-03
+ferz6laviv4g4jvs476ki3d6wg5qfjee	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkRz:IKpoFNvO3vAQ-x2OQObNuGmtWfG4i1gl_mPCISe6fzc	2025-12-22 20:15:27.981762-03
+1k6ip3cr8jqhagsqqgdvz5qkf0xya2hv	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS0:V2ycu0Yma425E2e_fRfpS75HMOrcAi8ztwDdOPhd0N0	2025-12-22 20:15:28.289459-03
+8gd4o1dyvjn16ynscgu9u5ejuej8b5rx	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS0:V2ycu0Yma425E2e_fRfpS75HMOrcAi8ztwDdOPhd0N0	2025-12-22 20:15:28.357194-03
+rk5v4xsdqi1mkl27brhu2zkvrknv5yku	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS0:V2ycu0Yma425E2e_fRfpS75HMOrcAi8ztwDdOPhd0N0	2025-12-22 20:15:28.678222-03
+tpo9t3yewg67vqhlhumfu909osbsh3e1	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS1:mHeA8FtAlxdfLEo-xGzovZCnsVKps8lbIx_jv99utuc	2025-12-22 20:15:29.052941-03
+l02tnjvwmucutfc6n2l0l9vzsyruv7j5	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS1:mHeA8FtAlxdfLEo-xGzovZCnsVKps8lbIx_jv99utuc	2025-12-22 20:15:29.080906-03
+qeohef4q1484nf2vclg5tz64q70i20e6	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS1:mHeA8FtAlxdfLEo-xGzovZCnsVKps8lbIx_jv99utuc	2025-12-22 20:15:29.115554-03
+gd75z10mv86y4htibtym35lp8kiyq6mf	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS1:mHeA8FtAlxdfLEo-xGzovZCnsVKps8lbIx_jv99utuc	2025-12-22 20:15:29.426569-03
+qobehhg2qqsoacymozavgq4z5m6qucjo	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS1:mHeA8FtAlxdfLEo-xGzovZCnsVKps8lbIx_jv99utuc	2025-12-22 20:15:29.471326-03
+505ma6fqoqor26bsg88mao39tfofihz0	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS2:sQJoEnPOYBfeciKW9PbhulJb69pNjpWl1odssyk2rJg	2025-12-22 20:15:30.254322-03
+70o4op0yr33cbaa68x7ar2oq6ap00ygu	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS2:sQJoEnPOYBfeciKW9PbhulJb69pNjpWl1odssyk2rJg	2025-12-22 20:15:30.347359-03
+1fno8vcmgoarc9xp4ib0ls74am6wdchj	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS2:sQJoEnPOYBfeciKW9PbhulJb69pNjpWl1odssyk2rJg	2025-12-22 20:15:30.755817-03
+qx7cya0tf2igc3dfnywek0khd9ybcy17	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS2:sQJoEnPOYBfeciKW9PbhulJb69pNjpWl1odssyk2rJg	2025-12-22 20:15:30.834603-03
+i20mfm1hewszw22lg8pied291xf3v9gn	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.020145-03
+aklxetki05wffqv25n20ysbq611dt18s	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.435506-03
+k4diwg87564b489pcwy5ty58pg6n8xq4	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.536274-03
+8h7j17qm6cpe3967nv370gturxjflmhp	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.578949-03
+x1pe9mlf7po9jrt917rr4t8mog6x37pv	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.698363-03
+hthzlm7hblcu8jads6yldkr298s560d4	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS3:fiN6R2nP8YSrNL-hLBQqTpKH8gL-t_-6Ri3GFFXyz_4	2025-12-22 20:15:31.747972-03
+jblh5vcbvlme2wjzjzxwl9r1ycwtw0ho	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS4:r-kN_5zgmrPz-KrYxZyp_yd6Zg_LI-BfjOjv5Rp5Nj4	2025-12-22 20:15:32.465499-03
+0728slrqscqh4raonrrdfcj512wzx5bu	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS4:r-kN_5zgmrPz-KrYxZyp_yd6Zg_LI-BfjOjv5Rp5Nj4	2025-12-22 20:15:32.57499-03
+1awutuoqpccrbfrfm0hsrkan4m4v8o0d	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS4:r-kN_5zgmrPz-KrYxZyp_yd6Zg_LI-BfjOjv5Rp5Nj4	2025-12-22 20:15:32.624295-03
+sc9wfyy0xdtg2j1j4y5g3ihhr8q4c4cs	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS4:r-kN_5zgmrPz-KrYxZyp_yd6Zg_LI-BfjOjv5Rp5Nj4	2025-12-22 20:15:32.73389-03
+m28sgmowbxug7szriz3xl1wf4kdsf6tv	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS4:r-kN_5zgmrPz-KrYxZyp_yd6Zg_LI-BfjOjv5Rp5Nj4	2025-12-22 20:15:32.866957-03
+6b7d2vzu0fjrx46ur0vehk01fit2xgqw	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS5:YJ224FTGkOon5RDW9c0E-9FdFOmwn3qXRw_FoOMLJhI	2025-12-22 20:15:33.430469-03
+fq0lz4ldtwrsp2vsnqf8635rotck9hs1	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS5:YJ224FTGkOon5RDW9c0E-9FdFOmwn3qXRw_FoOMLJhI	2025-12-22 20:15:33.473663-03
+1xy0mbxvmdny71dzxw0hutih99kw6dg7	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS5:YJ224FTGkOon5RDW9c0E-9FdFOmwn3qXRw_FoOMLJhI	2025-12-22 20:15:33.478999-03
+mcefoqod1okezcoq9vvbg5t4vdyx8kp4	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS5:YJ224FTGkOon5RDW9c0E-9FdFOmwn3qXRw_FoOMLJhI	2025-12-22 20:15:33.533855-03
+ruwxzx1sj1amswxfr206in3dhg98ks4h	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS5:YJ224FTGkOon5RDW9c0E-9FdFOmwn3qXRw_FoOMLJhI	2025-12-22 20:15:33.708363-03
+uymj1ljgef4eew7tmg3fk3gkcga494cb	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS6:ZMQEjpMg86jQ7qKgpJTPsQWMS8KxeDmkNEMORpxhLzU	2025-12-22 20:15:34.599357-03
+ec8f2xvaxw5f15e3ezac056g23pfmkd5	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS6:ZMQEjpMg86jQ7qKgpJTPsQWMS8KxeDmkNEMORpxhLzU	2025-12-22 20:15:34.601592-03
+6hm28x3s87770lb8omjr2ib53tc8z1gd	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS6:ZMQEjpMg86jQ7qKgpJTPsQWMS8KxeDmkNEMORpxhLzU	2025-12-22 20:15:34.926211-03
+ppkky7mmske045oe9izzd291tnrb8bwy	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.042362-03
+ixjfp34g1z7sxufhe2tv3aepvwun4lk2	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.134738-03
+js0pggsqv5sc80d2l6zb0hw848ulrko9	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.457643-03
+yhs6mp9336h9vmlmr70ujoz7t0w4feia	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.576815-03
+hllzkgmuoj2ymjzj2qvmq16o2tri7chp	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.702123-03
+rm0mzmjdnoryipj8fseh8vq4x4wjgexn	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.752879-03
+ncdc0gfjyhsyrgmvagzwqud95yrlio36	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS7:vca5241Kbu9tAhkonx9Bb6Gzd2bkN0eGSDW1Y4YvWng	2025-12-22 20:15:35.833845-03
+z14501iew96yhigt7id5002by4e5h1t2	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS8:1ZVYgNlodLDKbo_YKPq3SmXMKIpTWHFctR_5nbPppaA	2025-12-22 20:15:36.556338-03
+vlest7qhtrjwum52kkd1xofm4q8gchl5	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS8:1ZVYgNlodLDKbo_YKPq3SmXMKIpTWHFctR_5nbPppaA	2025-12-22 20:15:36.575445-03
+r6paob2f8i9qjnxzltruljy0qp8mrxlp	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS8:1ZVYgNlodLDKbo_YKPq3SmXMKIpTWHFctR_5nbPppaA	2025-12-22 20:15:36.628196-03
+zvx8wrplv54cvzcplw5ff1pktfff42ze	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS8:1ZVYgNlodLDKbo_YKPq3SmXMKIpTWHFctR_5nbPppaA	2025-12-22 20:15:36.629943-03
+r75cdij3nz3lijt40594rtr0k3r9vc4d	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS8:1ZVYgNlodLDKbo_YKPq3SmXMKIpTWHFctR_5nbPppaA	2025-12-22 20:15:36.652411-03
+t5m9vij9x69pqx2rsts518gcksyrkje8	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS9:Lor9bksUNYA5RNz9ZhS2y622LDmmj7f2KiK1HtyuNt8	2025-12-22 20:15:37.084095-03
+lze8cqvep7y2zvll4jkyp0pp4mr7trn3	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS9:Lor9bksUNYA5RNz9ZhS2y622LDmmj7f2KiK1HtyuNt8	2025-12-22 20:15:37.218783-03
+k3iyk9sw81ujovwpw34gumtteun2h7q6	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS9:Lor9bksUNYA5RNz9ZhS2y622LDmmj7f2KiK1HtyuNt8	2025-12-22 20:15:37.232122-03
+804oyid8u1nxqtymyi9r8ibr5srgxaon	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS9:Lor9bksUNYA5RNz9ZhS2y622LDmmj7f2KiK1HtyuNt8	2025-12-22 20:15:37.23756-03
+11c1271wvz4gz33ecbxlggd8yvxtz7qu	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vSkS9:Lor9bksUNYA5RNz9ZhS2y622LDmmj7f2KiK1HtyuNt8	2025-12-22 20:15:37.353889-03
 \.
 
 
 --
--- TOC entry 5170 (class 0 OID 24638)
+-- TOC entry 5173 (class 0 OID 24638)
 -- Dependencies: 228
 -- Data for Name: ingredientes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -849,7 +896,7 @@ COPY public.ingredientes (id_ingrediente, nombre, unidad_base) FROM stdin;
 
 
 --
--- TOC entry 5172 (class 0 OID 24646)
+-- TOC entry 5175 (class 0 OID 24646)
 -- Dependencies: 230
 -- Data for Name: receta_ingredientes; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1673,11 +1720,26 @@ COPY public.receta_ingredientes (id_receta_ingrediente, id_receta, id_ingredient
 708	131	28	13.00	gr
 724	106	28	13.00	gr
 731	107	28	33.00	gr
+856	132	54	1.00	gr
+857	132	53	1.00	gr
+858	132	52	1.00	gr
+859	133	54	1.00	gr
+860	133	73	1.00	gr
+861	134	54	200.00	gr
+862	134	47	10.00	ml
+863	134	62	50.00	gr
+864	135	54	250.00	gr
+865	135	57	150.00	gr
+866	135	74	5.00	gr
+867	136	1	50.00	gr
+868	136	80	30.00	gr
+869	136	76	100.00	gr
+870	136	22	150.00	gr
 \.
 
 
 --
--- TOC entry 5168 (class 0 OID 24617)
+-- TOC entry 5171 (class 0 OID 24617)
 -- Dependencies: 226
 -- Data for Name: recetas; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1814,11 +1876,16 @@ COPY public.recetas (id_receta, nombre, id_tipo_comida, estado, created_at, upda
 129	Paella	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 130	Porotos con mazamorra	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 131	Pantrucas	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
+132	pan con palta y osobuco	1	1	2025-12-02 03:37:11.934665	2025-12-02 03:37:11.934668
+133	pancito con queso rallado	1	1	2025-12-02 05:37:00.264643	2025-12-02 05:37:00.264647
+134	Pan con plátano y miel	1	1	2025-12-03 23:03:15.110262	2025-12-03 23:03:15.110266
+135	Pan con pollo	1	1	2025-12-04 00:53:46.50296	2025-12-04 00:53:46.502963
+136	Tallarines con salsa	2	1	2025-12-04 23:46:30.822422	2025-12-04 23:46:30.822429
 \.
 
 
 --
--- TOC entry 5162 (class 0 OID 24579)
+-- TOC entry 5165 (class 0 OID 24579)
 -- Dependencies: 220
 -- Data for Name: roles; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1831,7 +1898,7 @@ COPY public.roles (id_rol, nombre, descripcion) FROM stdin;
 
 
 --
--- TOC entry 5166 (class 0 OID 24609)
+-- TOC entry 5169 (class 0 OID 24609)
 -- Dependencies: 224
 -- Data for Name: tipos_comida; Type: TABLE DATA; Schema: public; Owner: postgres
 --
@@ -1845,19 +1912,21 @@ COPY public.tipos_comida (id_tipo_comida, nombre) FROM stdin;
 
 
 --
--- TOC entry 5164 (class 0 OID 24587)
+-- TOC entry 5167 (class 0 OID 24587)
 -- Dependencies: 222
 -- Data for Name: usuarios; Type: TABLE DATA; Schema: public; Owner: postgres
 --
 
 COPY public.usuarios (id_usuario, nombre, correo, password_hash, id_rol, estado, created_at) FROM stdin;
-1	Oriana Lagos	oriana.lagos@coanil.cl		2	1	2025-11-30 21:33:31.596741
-2	Benjamin Salazar	benjamin.salazar@coanil.cl	pbkdf2_sha256$1000000$czBESgpxbudKJM8HVv5vju$gaGe7m/6+VrNg6WT6Jt/kolPu9/Ory+ohZX9zD43vu4=	2	1	2025-11-30 21:42:30.152023
+3	Monserrat Pedraza	monserrat.pedraza@coanil.cl	pbkdf2_sha256$1000000$nF37NAXHK1I8LGAGdNKUWf$XtCc/P+1d8YzKE6ozuXilPD7utTCKWIoBTV/+1ultZE=	3	1	2025-12-02 05:19:17.539166
+4	pedrito	pedrito@coanil.cl	pbkdf2_sha256$1000000$Ak9gn3sY6ZTtRUyuOYkwYO$cLtniQTX/KjSHqjzkupvikJ6y/DJL/8vzcRCaJ16LT0=	1	1	2025-12-02 02:32:10.431107
+2	Benjamin Salazar	benjamin.salazar@coanil.cl	pbkdf2_sha256$1000000$FbS6l4zNUNKJ9HX1J6Jl8X$yIqm2S1wIZzlEb3lk99xn08V7E7J5Kyk/NdurUMPzOI=	1	1	2025-11-30 21:42:30.152023
+1	Oriana Lagos	oriana.lagos@coanil.cl	pbkdf2_sha256$1000000$8a7D9FnJ1jOb5QUoVepKnk$U0KGhOwT4UzHJt33Suzedvm9ItInQA4lXtkN3lYU+f8=	2	1	2025-11-30 21:33:31.596741
 \.
 
 
 --
--- TOC entry 5197 (class 0 OID 0)
+-- TOC entry 5200 (class 0 OID 0)
 -- Dependencies: 237
 -- Name: auth_group_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1866,7 +1935,7 @@ SELECT pg_catalog.setval('public.auth_group_id_seq', 1, false);
 
 
 --
--- TOC entry 5198 (class 0 OID 0)
+-- TOC entry 5201 (class 0 OID 0)
 -- Dependencies: 239
 -- Name: auth_group_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1875,7 +1944,7 @@ SELECT pg_catalog.setval('public.auth_group_permissions_id_seq', 1, false);
 
 
 --
--- TOC entry 5199 (class 0 OID 0)
+-- TOC entry 5202 (class 0 OID 0)
 -- Dependencies: 235
 -- Name: auth_permission_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1884,7 +1953,7 @@ SELECT pg_catalog.setval('public.auth_permission_id_seq', 88, true);
 
 
 --
--- TOC entry 5200 (class 0 OID 0)
+-- TOC entry 5203 (class 0 OID 0)
 -- Dependencies: 243
 -- Name: auth_user_groups_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1893,7 +1962,7 @@ SELECT pg_catalog.setval('public.auth_user_groups_id_seq', 1, false);
 
 
 --
--- TOC entry 5201 (class 0 OID 0)
+-- TOC entry 5204 (class 0 OID 0)
 -- Dependencies: 241
 -- Name: auth_user_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1902,7 +1971,7 @@ SELECT pg_catalog.setval('public.auth_user_id_seq', 1, false);
 
 
 --
--- TOC entry 5202 (class 0 OID 0)
+-- TOC entry 5205 (class 0 OID 0)
 -- Dependencies: 245
 -- Name: auth_user_user_permissions_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1911,7 +1980,7 @@ SELECT pg_catalog.setval('public.auth_user_user_permissions_id_seq', 1, false);
 
 
 --
--- TOC entry 5203 (class 0 OID 0)
+-- TOC entry 5206 (class 0 OID 0)
 -- Dependencies: 247
 -- Name: django_admin_log_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1920,7 +1989,7 @@ SELECT pg_catalog.setval('public.django_admin_log_id_seq', 1, false);
 
 
 --
--- TOC entry 5204 (class 0 OID 0)
+-- TOC entry 5207 (class 0 OID 0)
 -- Dependencies: 233
 -- Name: django_content_type_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1929,16 +1998,16 @@ SELECT pg_catalog.setval('public.django_content_type_id_seq', 22, true);
 
 
 --
--- TOC entry 5205 (class 0 OID 0)
+-- TOC entry 5208 (class 0 OID 0)
 -- Dependencies: 231
 -- Name: django_migrations_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.django_migrations_id_seq', 19, true);
+SELECT pg_catalog.setval('public.django_migrations_id_seq', 20, true);
 
 
 --
--- TOC entry 5206 (class 0 OID 0)
+-- TOC entry 5209 (class 0 OID 0)
 -- Dependencies: 227
 -- Name: ingredientes_id_ingrediente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1947,25 +2016,25 @@ SELECT pg_catalog.setval('public.ingredientes_id_ingrediente_seq', 86, true);
 
 
 --
--- TOC entry 5207 (class 0 OID 0)
+-- TOC entry 5210 (class 0 OID 0)
 -- Dependencies: 229
 -- Name: receta_ingredientes_id_receta_ingrediente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.receta_ingredientes_id_receta_ingrediente_seq', 855, true);
+SELECT pg_catalog.setval('public.receta_ingredientes_id_receta_ingrediente_seq', 870, true);
 
 
 --
--- TOC entry 5208 (class 0 OID 0)
+-- TOC entry 5211 (class 0 OID 0)
 -- Dependencies: 225
 -- Name: recetas_id_receta_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.recetas_id_receta_seq', 131, true);
+SELECT pg_catalog.setval('public.recetas_id_receta_seq', 136, true);
 
 
 --
--- TOC entry 5209 (class 0 OID 0)
+-- TOC entry 5212 (class 0 OID 0)
 -- Dependencies: 219
 -- Name: roles_id_rol_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1974,7 +2043,7 @@ SELECT pg_catalog.setval('public.roles_id_rol_seq', 3, true);
 
 
 --
--- TOC entry 5210 (class 0 OID 0)
+-- TOC entry 5213 (class 0 OID 0)
 -- Dependencies: 223
 -- Name: tipos_comida_id_tipo_comida_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
@@ -1983,16 +2052,16 @@ SELECT pg_catalog.setval('public.tipos_comida_id_tipo_comida_seq', 4, true);
 
 
 --
--- TOC entry 5211 (class 0 OID 0)
+-- TOC entry 5214 (class 0 OID 0)
 -- Dependencies: 221
 -- Name: usuarios_id_usuario_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 2, true);
+SELECT pg_catalog.setval('public.usuarios_id_usuario_seq', 4, true);
 
 
 --
--- TOC entry 4966 (class 2606 OID 24846)
+-- TOC entry 4969 (class 2606 OID 24846)
 -- Name: auth_group auth_group_name_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2001,7 +2070,7 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- TOC entry 4971 (class 2606 OID 24767)
+-- TOC entry 4974 (class 2606 OID 24767)
 -- Name: auth_group_permissions auth_group_permissions_group_id_permission_id_0cd325b0_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2010,7 +2079,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- TOC entry 4974 (class 2606 OID 24719)
+-- TOC entry 4977 (class 2606 OID 24719)
 -- Name: auth_group_permissions auth_group_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2019,7 +2088,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- TOC entry 4968 (class 2606 OID 24708)
+-- TOC entry 4971 (class 2606 OID 24708)
 -- Name: auth_group auth_group_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2028,7 +2097,7 @@ ALTER TABLE ONLY public.auth_group
 
 
 --
--- TOC entry 4961 (class 2606 OID 24758)
+-- TOC entry 4964 (class 2606 OID 24758)
 -- Name: auth_permission auth_permission_content_type_id_codename_01ab375a_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2037,7 +2106,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- TOC entry 4963 (class 2606 OID 24700)
+-- TOC entry 4966 (class 2606 OID 24700)
 -- Name: auth_permission auth_permission_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2046,7 +2115,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- TOC entry 4982 (class 2606 OID 24747)
+-- TOC entry 4985 (class 2606 OID 24747)
 -- Name: auth_user_groups auth_user_groups_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2055,7 +2124,7 @@ ALTER TABLE ONLY public.auth_user_groups
 
 
 --
--- TOC entry 4985 (class 2606 OID 24782)
+-- TOC entry 4988 (class 2606 OID 24782)
 -- Name: auth_user_groups auth_user_groups_user_id_group_id_94350c0c_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2064,7 +2133,7 @@ ALTER TABLE ONLY public.auth_user_groups
 
 
 --
--- TOC entry 4976 (class 2606 OID 24736)
+-- TOC entry 4979 (class 2606 OID 24736)
 -- Name: auth_user auth_user_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2073,7 +2142,7 @@ ALTER TABLE ONLY public.auth_user
 
 
 --
--- TOC entry 4988 (class 2606 OID 24756)
+-- TOC entry 4991 (class 2606 OID 24756)
 -- Name: auth_user_user_permissions auth_user_user_permissions_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2082,7 +2151,7 @@ ALTER TABLE ONLY public.auth_user_user_permissions
 
 
 --
--- TOC entry 4991 (class 2606 OID 24796)
+-- TOC entry 4994 (class 2606 OID 24796)
 -- Name: auth_user_user_permissions auth_user_user_permissions_user_id_permission_id_14a6b632_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2091,7 +2160,7 @@ ALTER TABLE ONLY public.auth_user_user_permissions
 
 
 --
--- TOC entry 4979 (class 2606 OID 24839)
+-- TOC entry 4982 (class 2606 OID 24839)
 -- Name: auth_user auth_user_username_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2100,7 +2169,7 @@ ALTER TABLE ONLY public.auth_user
 
 
 --
--- TOC entry 4994 (class 2606 OID 24823)
+-- TOC entry 4997 (class 2606 OID 24823)
 -- Name: django_admin_log django_admin_log_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2109,7 +2178,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- TOC entry 4956 (class 2606 OID 24690)
+-- TOC entry 4959 (class 2606 OID 24690)
 -- Name: django_content_type django_content_type_app_label_model_76bd3d3b_uniq; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2118,7 +2187,7 @@ ALTER TABLE ONLY public.django_content_type
 
 
 --
--- TOC entry 4958 (class 2606 OID 24688)
+-- TOC entry 4961 (class 2606 OID 24688)
 -- Name: django_content_type django_content_type_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2127,7 +2196,7 @@ ALTER TABLE ONLY public.django_content_type
 
 
 --
--- TOC entry 4954 (class 2606 OID 24678)
+-- TOC entry 4957 (class 2606 OID 24678)
 -- Name: django_migrations django_migrations_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2136,7 +2205,7 @@ ALTER TABLE ONLY public.django_migrations
 
 
 --
--- TOC entry 4998 (class 2606 OID 24859)
+-- TOC entry 5001 (class 2606 OID 24859)
 -- Name: django_session django_session_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2145,7 +2214,7 @@ ALTER TABLE ONLY public.django_session
 
 
 --
--- TOC entry 4948 (class 2606 OID 24644)
+-- TOC entry 4951 (class 2606 OID 24644)
 -- Name: ingredientes ingredientes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2154,7 +2223,7 @@ ALTER TABLE ONLY public.ingredientes
 
 
 --
--- TOC entry 4950 (class 2606 OID 24654)
+-- TOC entry 4953 (class 2606 OID 24654)
 -- Name: receta_ingredientes receta_ingredientes_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2163,7 +2232,7 @@ ALTER TABLE ONLY public.receta_ingredientes
 
 
 --
--- TOC entry 4946 (class 2606 OID 24630)
+-- TOC entry 4949 (class 2606 OID 24630)
 -- Name: recetas recetas_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2181,7 +2250,7 @@ ALTER TABLE ONLY public.roles
 
 
 --
--- TOC entry 4944 (class 2606 OID 24615)
+-- TOC entry 4945 (class 2606 OID 24615)
 -- Name: tipos_comida tipos_comida_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2190,7 +2259,7 @@ ALTER TABLE ONLY public.tipos_comida
 
 
 --
--- TOC entry 4952 (class 2606 OID 24656)
+-- TOC entry 4955 (class 2606 OID 24656)
 -- Name: receta_ingredientes uq_receta_ingrediente; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2199,7 +2268,7 @@ ALTER TABLE ONLY public.receta_ingredientes
 
 
 --
--- TOC entry 4940 (class 2606 OID 24602)
+-- TOC entry 4941 (class 2606 OID 24602)
 -- Name: usuarios usuarios_correo_key; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2208,7 +2277,7 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
--- TOC entry 4942 (class 2606 OID 24600)
+-- TOC entry 4943 (class 2606 OID 24600)
 -- Name: usuarios usuarios_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2217,7 +2286,7 @@ ALTER TABLE ONLY public.usuarios
 
 
 --
--- TOC entry 4964 (class 1259 OID 24847)
+-- TOC entry 4967 (class 1259 OID 24847)
 -- Name: auth_group_name_a6ea08ec_like; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2225,7 +2294,7 @@ CREATE INDEX auth_group_name_a6ea08ec_like ON public.auth_group USING btree (nam
 
 
 --
--- TOC entry 4969 (class 1259 OID 24778)
+-- TOC entry 4972 (class 1259 OID 24778)
 -- Name: auth_group_permissions_group_id_b120cbf9; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2233,7 +2302,7 @@ CREATE INDEX auth_group_permissions_group_id_b120cbf9 ON public.auth_group_permi
 
 
 --
--- TOC entry 4972 (class 1259 OID 24779)
+-- TOC entry 4975 (class 1259 OID 24779)
 -- Name: auth_group_permissions_permission_id_84c5c92e; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2241,7 +2310,7 @@ CREATE INDEX auth_group_permissions_permission_id_84c5c92e ON public.auth_group_
 
 
 --
--- TOC entry 4959 (class 1259 OID 24764)
+-- TOC entry 4962 (class 1259 OID 24764)
 -- Name: auth_permission_content_type_id_2f476e4b; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2249,7 +2318,7 @@ CREATE INDEX auth_permission_content_type_id_2f476e4b ON public.auth_permission 
 
 
 --
--- TOC entry 4980 (class 1259 OID 24794)
+-- TOC entry 4983 (class 1259 OID 24794)
 -- Name: auth_user_groups_group_id_97559544; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2257,7 +2326,7 @@ CREATE INDEX auth_user_groups_group_id_97559544 ON public.auth_user_groups USING
 
 
 --
--- TOC entry 4983 (class 1259 OID 24793)
+-- TOC entry 4986 (class 1259 OID 24793)
 -- Name: auth_user_groups_user_id_6a12ed8b; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2265,7 +2334,7 @@ CREATE INDEX auth_user_groups_user_id_6a12ed8b ON public.auth_user_groups USING 
 
 
 --
--- TOC entry 4986 (class 1259 OID 24808)
+-- TOC entry 4989 (class 1259 OID 24808)
 -- Name: auth_user_user_permissions_permission_id_1fbb5f2c; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2273,7 +2342,7 @@ CREATE INDEX auth_user_user_permissions_permission_id_1fbb5f2c ON public.auth_us
 
 
 --
--- TOC entry 4989 (class 1259 OID 24807)
+-- TOC entry 4992 (class 1259 OID 24807)
 -- Name: auth_user_user_permissions_user_id_a95ead1b; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2281,7 +2350,7 @@ CREATE INDEX auth_user_user_permissions_user_id_a95ead1b ON public.auth_user_use
 
 
 --
--- TOC entry 4977 (class 1259 OID 24840)
+-- TOC entry 4980 (class 1259 OID 24840)
 -- Name: auth_user_username_6821ab7c_like; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2289,7 +2358,7 @@ CREATE INDEX auth_user_username_6821ab7c_like ON public.auth_user USING btree (u
 
 
 --
--- TOC entry 4992 (class 1259 OID 24834)
+-- TOC entry 4995 (class 1259 OID 24834)
 -- Name: django_admin_log_content_type_id_c4bce8eb; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2297,7 +2366,7 @@ CREATE INDEX django_admin_log_content_type_id_c4bce8eb ON public.django_admin_lo
 
 
 --
--- TOC entry 4995 (class 1259 OID 24835)
+-- TOC entry 4998 (class 1259 OID 24835)
 -- Name: django_admin_log_user_id_c564eba6; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2305,7 +2374,7 @@ CREATE INDEX django_admin_log_user_id_c564eba6 ON public.django_admin_log USING 
 
 
 --
--- TOC entry 4996 (class 1259 OID 24861)
+-- TOC entry 4999 (class 1259 OID 24861)
 -- Name: django_session_expire_date_a5c62663; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2313,7 +2382,7 @@ CREATE INDEX django_session_expire_date_a5c62663 ON public.django_session USING 
 
 
 --
--- TOC entry 4999 (class 1259 OID 24860)
+-- TOC entry 5002 (class 1259 OID 24860)
 -- Name: django_session_session_key_c0390e0f_like; Type: INDEX; Schema: public; Owner: postgres
 --
 
@@ -2321,7 +2390,31 @@ CREATE INDEX django_session_session_key_c0390e0f_like ON public.django_session U
 
 
 --
--- TOC entry 5013 (class 2620 OID 24631)
+-- TOC entry 4946 (class 1259 OID 29006)
+-- Name: idx_receta_nombre; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_receta_nombre ON public.recetas USING btree (nombre);
+
+
+--
+-- TOC entry 4947 (class 1259 OID 29007)
+-- Name: idx_receta_tipo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_receta_tipo ON public.recetas USING btree (id_tipo_comida);
+
+
+--
+-- TOC entry 4939 (class 1259 OID 29008)
+-- Name: idx_usuario_correo; Type: INDEX; Schema: public; Owner: postgres
+--
+
+CREATE INDEX idx_usuario_correo ON public.usuarios USING btree (correo);
+
+
+--
+-- TOC entry 5016 (class 2620 OID 24631)
 -- Name: recetas tr_update_recetas; Type: TRIGGER; Schema: public; Owner: postgres
 --
 
@@ -2329,7 +2422,7 @@ CREATE TRIGGER tr_update_recetas BEFORE UPDATE ON public.recetas FOR EACH ROW EX
 
 
 --
--- TOC entry 5005 (class 2606 OID 24773)
+-- TOC entry 5008 (class 2606 OID 24773)
 -- Name: auth_group_permissions auth_group_permissio_permission_id_84c5c92e_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2338,7 +2431,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- TOC entry 5006 (class 2606 OID 24768)
+-- TOC entry 5009 (class 2606 OID 24768)
 -- Name: auth_group_permissions auth_group_permissions_group_id_b120cbf9_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2347,7 +2440,7 @@ ALTER TABLE ONLY public.auth_group_permissions
 
 
 --
--- TOC entry 5004 (class 2606 OID 24759)
+-- TOC entry 5007 (class 2606 OID 24759)
 -- Name: auth_permission auth_permission_content_type_id_2f476e4b_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2356,7 +2449,7 @@ ALTER TABLE ONLY public.auth_permission
 
 
 --
--- TOC entry 5007 (class 2606 OID 24788)
+-- TOC entry 5010 (class 2606 OID 24788)
 -- Name: auth_user_groups auth_user_groups_group_id_97559544_fk_auth_group_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2365,7 +2458,7 @@ ALTER TABLE ONLY public.auth_user_groups
 
 
 --
--- TOC entry 5008 (class 2606 OID 24783)
+-- TOC entry 5011 (class 2606 OID 24783)
 -- Name: auth_user_groups auth_user_groups_user_id_6a12ed8b_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2374,7 +2467,7 @@ ALTER TABLE ONLY public.auth_user_groups
 
 
 --
--- TOC entry 5009 (class 2606 OID 24802)
+-- TOC entry 5012 (class 2606 OID 24802)
 -- Name: auth_user_user_permissions auth_user_user_permi_permission_id_1fbb5f2c_fk_auth_perm; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2383,7 +2476,7 @@ ALTER TABLE ONLY public.auth_user_user_permissions
 
 
 --
--- TOC entry 5010 (class 2606 OID 24797)
+-- TOC entry 5013 (class 2606 OID 24797)
 -- Name: auth_user_user_permissions auth_user_user_permissions_user_id_a95ead1b_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2392,7 +2485,7 @@ ALTER TABLE ONLY public.auth_user_user_permissions
 
 
 --
--- TOC entry 5011 (class 2606 OID 24824)
+-- TOC entry 5014 (class 2606 OID 24824)
 -- Name: django_admin_log django_admin_log_content_type_id_c4bce8eb_fk_django_co; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2401,7 +2494,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- TOC entry 5012 (class 2606 OID 24829)
+-- TOC entry 5015 (class 2606 OID 24829)
 -- Name: django_admin_log django_admin_log_user_id_c564eba6_fk_auth_user_id; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2410,7 +2503,7 @@ ALTER TABLE ONLY public.django_admin_log
 
 
 --
--- TOC entry 5002 (class 2606 OID 24662)
+-- TOC entry 5005 (class 2606 OID 24662)
 -- Name: receta_ingredientes fk_receta_ing_ingred; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2419,7 +2512,7 @@ ALTER TABLE ONLY public.receta_ingredientes
 
 
 --
--- TOC entry 5003 (class 2606 OID 24657)
+-- TOC entry 5006 (class 2606 OID 24657)
 -- Name: receta_ingredientes fk_receta_ing_receta; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2428,7 +2521,7 @@ ALTER TABLE ONLY public.receta_ingredientes
 
 
 --
--- TOC entry 5001 (class 2606 OID 24632)
+-- TOC entry 5004 (class 2606 OID 24632)
 -- Name: recetas fk_recetas_tipos; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2437,7 +2530,7 @@ ALTER TABLE ONLY public.recetas
 
 
 --
--- TOC entry 5000 (class 2606 OID 24603)
+-- TOC entry 5003 (class 2606 OID 24603)
 -- Name: usuarios fk_usuarios_roles; Type: FK CONSTRAINT; Schema: public; Owner: postgres
 --
 
@@ -2445,24 +2538,11 @@ ALTER TABLE ONLY public.usuarios
     ADD CONSTRAINT fk_usuarios_roles FOREIGN KEY (id_rol) REFERENCES public.roles(id_rol);
 
 
--- Completed on 2025-12-01 00:43:48
+-- Completed on 2025-12-11 21:11:49
 
 --
 -- PostgreSQL database dump complete
 --
 
-\unrestrict xpWkTtpamHbfThB3w50HffZvJb75eLaHikaJKdi7u3gdwLSrbLKAGdWg1rVsjZJ
+\unrestrict ZUqNcTQoag8RRN47MFQ5OYi4SxV9cxqEOUHbsk4MnadPwoAubExJdaGTdRXKjcy
 
-
-SQL
-
--- --- OPTIMIZACIÓN: ÍNDICES B-TREE (Agregado por [Tu Nombre]) ---
-
--- 1. Índice para buscar recetas por nombre
-CREATE INDEX IF NOT EXISTS idx_receta_nombre ON recetas (nombre);
-
--- 2. Índice para filtrar por tipo de comida
-CREATE INDEX IF NOT EXISTS idx_receta_tipo ON recetas (id_tipo_comida);
-
--- 3. Índice para acelerar el Login
-CREATE INDEX IF NOT EXISTS idx_usuario_correo ON usuarios (correo);
