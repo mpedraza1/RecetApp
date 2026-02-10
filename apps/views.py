@@ -12,7 +12,7 @@ from django.contrib import messages
 from django.db import transaction
 from .forms import LoginForm, ValidarCorreoForm, NuevaPasswordForm, UsuarioAdminForm
 import json
-from .utils import render_to_pdf
+from .utils import render_to_pdf, obtener_calculo_receta, formatear_cantidad_inteligente
 from django.db.models import F
 from datetime import datetime
 
@@ -152,12 +152,8 @@ def resumen_calculos(request):
     calculo = None  
     if request.method == "POST":
         receta_id = request.POST.get("receta")
-        comensales = int(request.POST.get("comensales", 1))
-
-        
+        comensales = int(request.POST.get("comensales", 1))      
         receta = Recetas.objects.get(id_receta=receta_id)
-
-        
         ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
 
         calculo = []
@@ -178,462 +174,41 @@ def resumen_calculos(request):
 
     return render(request, "resumen_calculos.html", context)
 
-
-def formatear_cantidad_inteligente(cantidad, nombre_unidad):
-    """
-    1. Convierte gr -> Kg y ml -> Litros si es >= 1000.
-    2. Si el número final es entero (ej: 42.0), muestra "42" (sin ,00).
-    3. Si tiene decimales (ej: 1.8), muestra "1,8" (quitando el 0 extra del final).
-    """
-    u = str(nombre_unidad).lower().strip()
-    val = cantidad
-    new_unit = nombre_unidad
-
-    # --- 1. Lógica de Conversión de Unidad ---
-    if u in ['gr', 'g', 'gramo', 'gramos'] and cantidad >= 1000:
-        val = cantidad / 1000
-        new_unit = "Kg"
-    elif u in ['ml', 'cc', 'mililitro', 'mililitros'] and cantidad >= 1000:
-        val = cantidad / 1000
-        new_unit = "Litros"
-
-    # --- 2. Lógica de Formateo Visual ---
-    
-    # Caso A: Es un número entero exacto (Ej: 42.0 o 600)
-    if val == int(val):
-        # Retornamos entero con punto de miles (Ej: "1.200" o "42")
-        return f"{int(val):_}".replace('_', '.'), new_unit
-    
-    # Caso B: Tiene decimales reales (Ej: 1.8 o 1.25)
-    else:
-        # Formateamos a 2 decimales, cambiamos punto por coma, 
-        # y quitamos los ceros a la derecha.
-        texto = f"{val:.2f}".replace('.', ',').rstrip('0').rstrip(',')
-        return texto, new_unit
-
 def calcular_por_tipo(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
+    if request.method != "POST":
+        return JsonResponse({"error": "Método no permitido"}, status=405)
 
-            receta_id = data.get("receta_id")
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            receta_dos_id = data.get("receta_dos") 
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-            # ========================================================
-            # 1. CONSOLIDACIÓN (Sumar ingredientes iguales)
-            # ========================================================
-            # Diccionario: Clave=(Nombre, Unidad) -> Valor=CantidadTotal
-            consolidador = {}
-
-            # Función auxiliar para procesar ingredientes de cualquier receta
-            def procesar_receta(id_receta):
-                try:
-                    r = Recetas.objects.get(id_receta=id_receta)
-                    items = RecetaIngredientes.objects.filter(id_receta=r)
-                    for item in items:
-                        nombre = item.id_ingrediente.nombre
-                        unidad = str(item.unidad) if item.unidad else ""
-                        cantidad_total = item.cantidad * comensales
-                        
-                        llave = (nombre, unidad)
-                        if llave in consolidador:
-                            consolidador[llave] += cantidad_total
-                        else:
-                            consolidador[llave] = cantidad_total
-                except Recetas.DoesNotExist:
-                    pass
-
-            # Procesamos Receta 1
-            procesar_receta(receta_id)
-
-            # Procesamos Receta 2 (si existe)
-            if receta_dos_id:
-                procesar_receta(receta_dos_id)
-
-            # ========================================================
-            # 2. GENERAR LISTA FINAL FORMATEADA
-            # ========================================================
-            calculo_final = []
-
-            for (nombre, unidad_orig), cantidad_total_num in consolidador.items():
-                
-                # A. Formatear Total (convertir a Kg/Litros si corresponde)
-                cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total_num, unidad_orig)
-
-                # B. Calcular Base Teórica (Total / Comensales) para mostrar en la tabla
-                # Esto es necesario porque al sumar, la "base" individual se pierde.
-                base_teorica = cantidad_total_num / comensales
-                base_fmt = f"{int(base_teorica):_}".replace("_", ".") + " " + unidad_orig
-
-                calculo_final.append({
-                    "ingrediente": nombre,
-                    "cantidad_base": base_fmt,
-                    "unidad": unidad_total_fmt,
-                    "cantidad_total": cant_total_fmt
-                })
-
-            # Ordenar alfabéticamente
-            calculo_final.sort(key=lambda x: x['ingrediente'])
-
-            # Devolvemos TODO en 'calculo'. 'calculo_dos' va vacío.
-            # Tu JS actual pintará 'calculo' y como 'calculo_dos' es null, no hará nada extra.
-            return JsonResponse({"calculo": calculo_final, "calculo_dos": None})
-
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-
-            receta_id = data.get("receta_id")
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            receta_dos_id = data.get("receta_dos") 
-            tipo_dos_raw = data.get("tipo_dos")
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-            # --- RECETA 1 ---
-            receta = Recetas.objects.get(id_receta=receta_id)
-            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-            calculo = []
-            for item in ingredientes_receta:
-                cantidad_total = item.cantidad * comensales
-                unidad_orig = str(item.unidad) if item.unidad else ""
-                
-                # 1. Formateamos el total (Conversión a Kg/Litros o Entero)
-                cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total, unidad_orig)
-
-                # 2. Formateamos la base (Número Entero + Unidad Original)
-                base_fmt = f"{int(item.cantidad):_}".replace("_", ".") + " " + unidad_orig
-
-                calculo.append({
-                    "ingrediente": item.id_ingrediente.nombre,
-                    "cantidad_base": base_fmt,        # Ej: "200 gr"
-                    "unidad": unidad_total_fmt,       # Ej: "Kg" (La unidad del total)
-                    "cantidad_total": cant_total_fmt  # Ej: "1,5"
-                })
-
-            # --- RECETA 2 ---
-            calculo_dos = None
-            if receta_dos_id: 
-                try:
-                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
-                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-                    
-                    calculo_dos = []
-                    for item in ingredientes_receta_dos:
-                        cantidad_total_dos = item.cantidad * comensales
-                        unidad_orig_dos = str(item.unidad) if item.unidad else ""
-
-                        cant_total_fmt, unidad_total_fmt = formatear_cantidad_inteligente(cantidad_total_dos, unidad_orig_dos)
-                        base_fmt_dos = f"{int(item.cantidad):_}".replace("_", ".") + " " + unidad_orig_dos
-
-                        calculo_dos.append({
-                            "ingrediente": item.id_ingrediente.nombre,
-                            "cantidad_base": base_fmt_dos,
-                            "unidad": unidad_total_fmt,
-                            "cantidad_total": cant_total_fmt
-                        })
-                except (Recetas.DoesNotExist, ValueError):
-                     pass 
-
-            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
-
-        except Recetas.DoesNotExist:
-            return JsonResponse({"error": "La receta principal no existe"}, status=404)
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-
-            receta_id = data.get("receta_id")
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            receta_dos_id = data.get("receta_dos") 
-            tipo_dos_raw = data.get("tipo_dos")
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-            # --- RECETA 1 ---
-            receta = Recetas.objects.get(id_receta=receta_id)
-            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-            calculo = []
-            for item in ingredientes_receta:
-                cantidad_total = item.cantidad * comensales
-                unidad_original = str(item.unidad) if item.unidad else ""
-                
-                # APLICAMOS LA CONVERSIÓN AQUÍ
-                cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad_total, unidad_original)
-
-                calculo.append({
-                    "ingrediente": item.id_ingrediente.nombre,
-                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                    "unidad": unidad_fmt,        # Unidad convertida (si aplica)
-                    "cantidad_total": cant_fmt   # Cantidad convertida
-                })
-
-            # --- RECETA 2 ---
-            calculo_dos = None
-            if receta_dos_id: 
-                try:
-                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
-                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-                    
-                    calculo_dos = []
-                    for item in ingredientes_receta_dos:
-                        cantidad_total_dos = item.cantidad * comensales
-                        unidad_original_dos = str(item.unidad) if item.unidad else ""
-
-                        # APLICAMOS LA CONVERSIÓN AQUÍ TAMBIÉN
-                        cant_fmt_dos, unidad_fmt_dos = formatear_cantidad_inteligente(cantidad_total_dos, unidad_original_dos)
-
-                        calculo_dos.append({
-                            "ingrediente": item.id_ingrediente.nombre,
-                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                            "unidad": unidad_fmt_dos,
-                            "cantidad_total": cant_fmt_dos
-                        })
-                except (Recetas.DoesNotExist, ValueError):
-                     pass 
-
-            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
-
-        except Recetas.DoesNotExist:
-            return JsonResponse({"error": "La receta principal no existe"}, status=404)
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-
-            receta_id = data.get("receta_id")
-            # Protección para comensales
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            receta_dos_id = data.get("receta_dos") 
-            tipo_dos_raw = data.get("tipo_dos")
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-            # --- CÁLCULO RECETA 1 ---
-            receta = Recetas.objects.get(id_receta=receta_id)
-            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-            calculo = []
-            for item in ingredientes_receta:
-                cantidad_total = item.cantidad * comensales
-                calculo.append({
-                    "ingrediente": item.id_ingrediente.nombre,
-                    # FORZAMOS ENTERO EN CANTIDAD BASE
-                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                    "unidad": str(item.unidad) if item.unidad else "", 
-                    # FORZAMOS ENTERO EN CANTIDAD TOTAL
-                    "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
-                })
-
-            # --- CÁLCULO RECETA 2 ---
-            calculo_dos = None
-            
-            if receta_dos_id: 
-                try:
-                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
-                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-                    
-                    calculo_dos = []
-                    for item in ingredientes_receta_dos:
-                        cantidad_total_dos = item.cantidad * comensales
-                        calculo_dos.append({
-                            "ingrediente": item.id_ingrediente.nombre,
-                            # FORZAMOS ENTERO EN CANTIDAD BASE
-                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                            "unidad": str(item.unidad) if item.unidad else "", 
-                            # FORZAMOS ENTERO EN CANTIDAD TOTAL
-                            "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
-                        })
-                except (Recetas.DoesNotExist, ValueError):
-                     pass 
-
-            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
-
-        except Recetas.DoesNotExist:
-            return JsonResponse({"error": "La receta principal no existe"}, status=404)
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-
-            receta_id = data.get("receta_id")
-            # Protección para comensales
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            receta_dos_id = data.get("receta_dos") 
-            tipo_dos_raw = data.get("tipo_dos")
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
-            # --- CÁLCULO RECETA 1 ---
-            receta = Recetas.objects.get(id_receta=receta_id)
-            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-            calculo = []
-            for item in ingredientes_receta:
-                cantidad_total = item.cantidad * comensales
-                calculo.append({
-                    "ingrediente": item.id_ingrediente.nombre,
-                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                    # CORRECCIÓN: Usamos str() para asegurar que sea texto, sin pedir .nombre
-                    "unidad": str(item.unidad) if item.unidad else "", 
-                    "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
-                })
-
-            # --- CÁLCULO RECETA 2 ---
-            calculo_dos = None
-            
-            # Solo procesamos si hay ID de segunda receta
-            if receta_dos_id: 
-                try:
-                    # Buscamos directamente por ID de receta
-                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id)
-                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-                    
-                    calculo_dos = []
-                    for item in ingredientes_receta_dos:
-                        cantidad_total_dos = item.cantidad * comensales
-                        calculo_dos.append({
-                            "ingrediente": item.id_ingrediente.nombre,
-                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                            # CORRECCIÓN: Igual aquí, str(item.unidad)
-                            "unidad": str(item.unidad) if item.unidad else "", 
-                            "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
-                        })
-                except (Recetas.DoesNotExist, ValueError):
-                     pass 
-
-            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
-
-        except Recetas.DoesNotExist:
-            return JsonResponse({"error": "La receta principal no existe"}, status=404)
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
-
-
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body.decode("utf-8"))
-
-            receta_id = data.get("receta_id")
-            
-            try:
-                comensales = int(data.get("comensales", 1))
-            except (ValueError, TypeError):
-                comensales = 1
-            
-            
-            receta_dos_id = data.get("receta_dos") 
-            tipo_dos_raw = data.get("tipo_dos")
-
-            if not receta_id:
-                return JsonResponse({"error": "No se envió receta_id"}, status=400)
-
+    try:
+        data = json.loads(request.body.decode("utf-8"))
+        receta_id = data.get("receta_id")
+        receta_dos_id = data.get("receta_dos")
         
-            receta = Recetas.objects.get(id_receta=receta_id)
-            ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
-            
-            calculo = []
-            for item in ingredientes_receta:
-                cantidad_total = item.cantidad * comensales
-                calculo.append({
-                    "ingrediente": item.id_ingrediente.nombre,
-                    "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                    
-                    "unidad": item.unidad, 
-                    "cantidad_total": f"{int(cantidad_total):_}".replace("_", ".")
-                })
+        # Limpieza de comensales
+        try:
+            comensales = int(data.get("comensales", 1))
+        except (ValueError, TypeError):
+            comensales = 1
 
-        
-            calculo_dos = None
-            
-            
-            if receta_dos_id and tipo_dos_raw: 
-                try:
-                    tipo_dos_int = int(tipo_dos_raw)
-                    receta_dos = Recetas.objects.get(id_receta=receta_dos_id, id_tipo_comida=tipo_dos_int)
-                    ingredientes_receta_dos = RecetaIngredientes.objects.filter(id_receta=receta_dos)
-                    
-                    calculo_dos = []
-                    for item in ingredientes_receta_dos:
-                        cantidad_total_dos = item.cantidad * comensales
-                        calculo_dos.append({
-                            "ingrediente": item.id_ingrediente.nombre,
-                            "cantidad_base": f"{int(item.cantidad):_}".replace("_", "."),
-                          
-                            "unidad": item.unidad.nombre, 
-                            "cantidad_total": f"{int(cantidad_total_dos):_}".replace("_", ".")
-                        })
-                except (Recetas.DoesNotExist, ValueError):
-                     pass 
+        if not receta_id:
+            return JsonResponse({"error": "Falta el ID de la receta principal"}, status=400)
 
-            return JsonResponse({"calculo": calculo, "calculo_dos": calculo_dos})
 
-        except Recetas.DoesNotExist:
+        calculo_uno = obtener_calculo_receta(receta_id, comensales)
+        calculo_dos = obtener_calculo_receta(receta_dos_id, comensales)
+
+        if calculo_uno is None:
             return JsonResponse({"error": "La receta principal no existe"}, status=404)
-        except Exception as e:
-            print(f"Error servidor: {e}") 
-            return JsonResponse({"error": str(e)}, status=500)
-    
-    return JsonResponse({"error": "Método no permitido"}, status=405)
+
+        return JsonResponse({
+            "calculo": calculo_uno,
+            "calculo_dos": calculo_dos 
+        })
+
+    except Exception as e:
+        print(f"Error en servidor: {e}")
+        return JsonResponse({"error": "Error interno del servidor"}, status=500)
+
+
 
 
 
@@ -783,13 +358,10 @@ def recuperar_b(request):
     if request.method == 'POST':
         form = NuevaPasswordForm(request.POST)
         if form.is_valid():
-            usuario = Usuarios.objects.get(pk=usuario_id)
-            
-         
+            usuario = Usuarios.objects.get(pk=usuario_id)                
             usuario.password_hash = make_password(form.cleaned_data['password'])
             usuario.save()
-
-            
+           
             del request.session['recuperar_user_id']
             
             messages.success(request, "Contraseña restablecida correctamente. Inicia sesión.")
@@ -808,8 +380,6 @@ def logout_view(request):
 def gestion_usuarios(request):
     form_crear = UsuarioAdminForm()
     query = request.GET.get('q')
-    
-   
     resultados_busqueda = None 
     
     if query:

@@ -1720,21 +1720,6 @@ COPY public.receta_ingredientes (id_receta_ingrediente, id_receta, id_ingredient
 708	131	28	13.00	gr
 724	106	28	13.00	gr
 731	107	28	33.00	gr
-856	132	54	1.00	gr
-857	132	53	1.00	gr
-858	132	52	1.00	gr
-859	133	54	1.00	gr
-860	133	73	1.00	gr
-861	134	54	200.00	gr
-862	134	47	10.00	ml
-863	134	62	50.00	gr
-864	135	54	250.00	gr
-865	135	57	150.00	gr
-866	135	74	5.00	gr
-867	136	1	50.00	gr
-868	136	80	30.00	gr
-869	136	76	100.00	gr
-870	136	22	150.00	gr
 \.
 
 
@@ -1876,11 +1861,6 @@ COPY public.recetas (id_receta, nombre, id_tipo_comida, estado, created_at, upda
 129	Paella	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 130	Porotos con mazamorra	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 131	Pantrucas	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
-132	pan con palta y osobuco	1	1	2025-12-02 03:37:11.934665	2025-12-02 03:37:11.934668
-133	pancito con queso rallado	1	1	2025-12-02 05:37:00.264643	2025-12-02 05:37:00.264647
-134	Pan con plátano y miel	1	1	2025-12-03 23:03:15.110262	2025-12-03 23:03:15.110266
-135	Pan con pollo	1	1	2025-12-04 00:53:46.50296	2025-12-04 00:53:46.502963
-136	Tallarines con salsa	2	1	2025-12-04 23:46:30.822422	2025-12-04 23:46:30.822429
 \.
 
 
@@ -1904,10 +1884,10 @@ COPY public.roles (id_rol, nombre, descripcion) FROM stdin;
 --
 
 COPY public.tipos_comida (id_tipo_comida, nombre) FROM stdin;
-1	Desayuno - Once
-2	Almuerzo - Cena-Guarnición
-3	Almuerzo-Cena-Proteína
-4	Almuerzo-Cena-Compuesto
+1	Desayuno u Once
+2	Almuerzo o Cena-Acompañamiento
+3	Almuerzo o Cena-Proteína
+4	Almuerzo o Cena-Plato Compuesto
 \.
 
 
