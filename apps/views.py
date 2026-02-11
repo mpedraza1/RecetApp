@@ -208,6 +208,43 @@ def calcular_por_tipo(request):
         print(f"Error en servidor: {e}")
         return JsonResponse({"error": "Error interno del servidor"}, status=500)
 
+def agregar_al_resumen(request):
+    """Guarda la selección actual en la sesión del servidor."""
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            resumen = request.session.get('resumen_recetas', [])
+            
+            nombres = data.get('nombre1', 'Receta')
+            if data.get('nombre2') and data.get('nombre2') != "Seleccione una receta":
+                nombres += f" + {data['nombre2']}"
+
+            resumen.append({
+                'fecha': data.get('fecha', timezone.now().strftime("%Y-%m-%d")),
+                'comensales': data.get('comensales', 1),
+                'receta_id': data.get('receta_id'),
+                'receta_dos_id': data.get('receta_dos_id'),
+                'nombres': nombres
+            })
+            
+            request.session['resumen_recetas'] = resumen
+            request.session.modified = True
+            return JsonResponse({'status': 'ok', 'recetas': resumen})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)}, status=400)
+
+def obtener_acumulados(request):
+    """Devuelve lo que hay en el 'carrito' actual."""
+    return JsonResponse({'recetas': request.session.get('resumen_recetas', [])})
+
+def eliminar_receta_resumen(request, index):
+    """Permite quitar una receta de la lista antes de generar el PDF."""
+    resumen = request.session.get('resumen_recetas', [])
+    if 0 <= index < len(resumen):
+        resumen.pop(index)
+        request.session['resumen_recetas'] = resumen
+        request.session.modified = True
+    return JsonResponse({'status': 'ok', 'recetas': resumen})
 
 
 
@@ -434,425 +471,59 @@ def editar_usuario_admin(request, id_usuario):
     return redirect('usuarios')
 
 def generar_informe_pdf(request):
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    fecha_raw = request.GET.get('fecha', '')
-    fecha_final = timezone.now().strftime("%d/%m/%Y")
-    if fecha_raw:
-        try:
-            fecha_final = datetime.strptime(fecha_raw, "%Y-%m-%d").strftime("%d/%m/%Y")
-        except ValueError:
-            pass
-
-    raw_ids = request.GET.get('recetas', '')
-    receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()] if raw_ids else []
+    # 1. Obtenemos todo el acumulado de la sesión
+    resumen = request.session.get('resumen_recetas', [])
+    
+    if not resumen:
+        return HttpResponse("No hay recetas agregadas para generar el informe.", status=400)
 
     ingredientes_consolidados = {}
-    nombres_recetas_str = "Ninguna"
+    nombres_recetas_list = []
+    fecha_reporte = resumen[0]['fecha'] # Usamos la fecha de la primera entrada
 
-    if receta_ids:
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
+    # 2. Iteramos sobre cada selección guardada
+    for item in resumen:
+        comensales = int(item['comensales'])
+        ids_a_procesar = [item['receta_id']]
+        if item.get('receta_dos_id'):
+            ids_a_procesar.append(item['receta_dos_id'])
         
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        # --- LÓGICA DE SUMA ---
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-            cantidad_total = item.cantidad * cant_comensales
+        recetas = Recetas.objects.filter(id_receta__in=[id for id in ids_a_procesar if id])
+        
+        for r in recetas:
+            if r.nombre not in nombres_recetas_list:
+                nombres_recetas_list.append(r.nombre)
             
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
+            # Buscamos ingredientes de esta receta específica
+            items_rel = RecetaIngredientes.objects.filter(id_receta=r).select_related('id_ingrediente')
+            for rel in items_rel:
+                nombre_ing = rel.id_ingrediente.nombre
+                unidad = str(rel.unidad) if rel.unidad else "Unidad"
+                cantidad_total = rel.cantidad * comensales
+                
+                llave = (nombre_ing, unidad)
+                ingredientes_consolidados[llave] = ingredientes_consolidados.get(llave, 0) + cantidad_total
 
-    # --- LÓGICA DE FORMATO ---
+    # 3. Formateo para el PDF
     lista_final = []
     for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        
-        # Usamos la misma función inteligente que la tabla
         cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad, unidad)
-
         lista_final.append({
             'nombre': nombre,
             'cantidad_total': cant_fmt,
             'unidad': unidad_fmt
         })
-
     lista_final.sort(key=lambda x: x['nombre'])
 
-    data = {
-        'comensales': cant_comensales,
-        'nombres_recetas': nombres_recetas_str,
+    contexto = {
+        'nombres_recetas': ", ".join(nombres_recetas_list),
         'ingredientes': lista_final,
-        'fecha': fecha_final,
+        'fecha': datetime.strptime(fecha_reporte, "%Y-%m-%d").strftime("%d/%m/%Y") if '-' in fecha_reporte else fecha_reporte,
     }
 
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
+    pdf = render_to_pdf('reporte_pdf.html', contexto)
     
-    return HttpResponse("Error al generar el PDF", status=500)
-    # 1. Datos básicos
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    fecha_raw = request.GET.get('fecha', '')
-    fecha_final = timezone.now().strftime("%d/%m/%Y")
-    if fecha_raw:
-        try:
-            fecha_final = datetime.strptime(fecha_raw, "%Y-%m-%d").strftime("%d/%m/%Y")
-        except ValueError:
-            pass
-
-    # 2. Recetas
-    raw_ids = request.GET.get('recetas', '')
-    receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()] if raw_ids else []
-
-    ingredientes_consolidados = {}
-    nombres_recetas_str = "Ninguna"
-
-    if receta_ids:
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
-        
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-            cantidad_total = item.cantidad * cant_comensales
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
-
-    # 3. Formateo Final (AQUÍ ESTÁ EL CAMBIO)
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        
-        # Usamos la función inteligente para convertir si es necesario
-        cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad, unidad)
-
-        lista_final.append({
-            'nombre': nombre,
-            'cantidad_total': cant_fmt,
-            'unidad': unidad_fmt
-        })
-
-    lista_final.sort(key=lambda x: x['nombre'])
-
-    # 4. Render
-    data = {
-        'comensales': cant_comensales,
-        'nombres_recetas': nombres_recetas_str,
-        'ingredientes': lista_final,
-        'fecha': fecha_final,
-    }
-
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
+    # OPCIONAL: Si quieres que al generar el PDF se limpie la lista para la próxima vez
+    # request.session['resumen_recetas'] = []
     
-    return HttpResponse("Error al generar el PDF", status=500)
-
-
-    # 1. Obtener y validar comensales
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    # 2. Fecha
-    fecha_raw = request.GET.get('fecha', '')
-    if fecha_raw:
-        try:
-            fecha_obj = datetime.strptime(fecha_raw, "%Y-%m-%d")
-            fecha_final = fecha_obj.strftime("%d/%m/%Y")
-        except ValueError:
-            fecha_final = timezone.now().strftime("%d/%m/%Y")
-    else:
-        fecha_final = timezone.now().strftime("%d/%m/%Y")
-
-    # 3. Obtener IDs
-    raw_ids = request.GET.get('recetas', '')
-    if raw_ids:
-        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
-    else:
-        receta_ids = []
-
-    ingredientes_consolidados = {}
-    nombres_recetas_str = "Ninguna"
-
-    if receta_ids:
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
-        
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-            cantidad_total = item.cantidad * cant_comensales
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
-
-    # 4. Convertir a lista y formatear números
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        lista_final.append({
-            'nombre': nombre,
-            # CAMBIO AQUÍ: Convertimos a int() y formateamos con puntos de mil
-            'cantidad_total': f"{int(cantidad):_}".replace("_", "."),
-            'unidad': unidad
-        })
-
-    lista_final.sort(key=lambda x: x['nombre'])
-
-    # 5. Preparar contexto
-    data = {
-        'comensales': cant_comensales,
-        'nombres_recetas': nombres_recetas_str,
-        'ingredientes': lista_final,
-        'fecha': fecha_final,
-    }
-
-    # 6. Generar PDF
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
-    
-    return HttpResponse("Error al generar el PDF", status=500)
-    # 1. Obtener y validar comensales
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    # =========================================================
-    # 2. NUEVO: Obtener y formatear la fecha seleccionada
-    # =========================================================
-    fecha_raw = request.GET.get('fecha', '') # Viene como "YYYY-MM-DD"
-    
-    if fecha_raw:
-        try:
-            # Convertimos de formato HTML (2023-12-31) a objeto fecha
-            fecha_obj = datetime.strptime(fecha_raw, "%Y-%m-%d")
-            # Lo convertimos al formato chileno (31/12/2023)
-            fecha_final = fecha_obj.strftime("%d/%m/%Y")
-        except ValueError:
-            # Si la fecha viene malformada, usamos la de hoy
-            fecha_final = timezone.now().strftime("%d/%m/%Y")
-    else:
-        # Si el usuario no seleccionó fecha, usamos la de hoy
-        fecha_final = timezone.now().strftime("%d/%m/%Y")
-
-    # 3. Obtener y limpiar IDs de recetas
-    raw_ids = request.GET.get('recetas', '')
-    
-    if raw_ids:
-        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
-    else:
-        receta_ids = []
-
-    ingredientes_consolidados = {}
-    nombres_recetas_str = "Ninguna"
-
-    if receta_ids:
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        
-        # Nombres para el reporte
-        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
-        
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-            cantidad_total = item.cantidad * cant_comensales
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
-
-    # 4. Convertir a lista y ordenar
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        lista_final.append({
-            'nombre': nombre,
-            'cantidad_total': f"{cantidad:g}".replace('.', ','),
-            'unidad': unidad
-        })
-
-    lista_final.sort(key=lambda x: x['nombre'])
-
-    # 5. Preparar contexto
-    data = {
-        'comensales': cant_comensales,
-        'nombres_recetas': nombres_recetas_str,
-        'ingredientes': lista_final,
-        'fecha': fecha_final, # <--- Aquí pasamos la fecha procesada
-    }
-
-    # 6. Generar PDF
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
-    
-    return HttpResponse("Error al generar el PDF", status=500)
-    # 1. Obtener y validar comensales
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    # 2. Obtener y limpiar IDs de recetas
-    raw_ids = request.GET.get('recetas', '')
-    
-    if raw_ids:
-        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
-    else:
-        receta_ids = []
-
-    ingredientes_consolidados = {}
-    nombres_recetas_str = "Ninguna" # Valor por defecto
-
-    if receta_ids:
-        # Filtramos las recetas
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        
-        # --- NUEVO: Creamos una cadena de texto con los nombres ---
-        # Esto crea algo como: "Cazuela, Ensalada Surtida"
-        nombres_recetas_str = ", ".join([r.nombre for r in recetas])
-        
-        # Buscamos TODOS los ingredientes
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            # Usamos str() para evitar el error de .nombre en objetos que no lo tienen
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-
-            cantidad_total = item.cantidad * cant_comensales
-
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
-
-    # 3. Convertir a lista
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        lista_final.append({
-            'nombre': nombre,
-            'cantidad_total': f"{cantidad:g}".replace('.', ','),
-            'unidad': unidad
-        })
-
-    lista_final.sort(key=lambda x: x['nombre'])
-
-    # 4. Preparar contexto (Agregamos 'nombres_recetas')
-    data = {
-        'comensales': cant_comensales,
-        'nombres_recetas': nombres_recetas_str, # <--- AQUÍ PASAMOS LOS NOMBRES
-        'ingredientes': lista_final,
-        'fecha': timezone.now().strftime("%d/%m/%Y"),
-    }
-
-    # 5. Generar PDF
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
-    
-    return HttpResponse("Error al generar el PDF", status=500)    # 1. Obtener y validar comensales
-    try:
-        cant_comensales = int(request.GET.get('comensales', 1))
-    except ValueError:
-        cant_comensales = 1
-
-    # 2. Obtener y limpiar IDs de recetas
-    raw_ids = request.GET.get('recetas', '')
-    
-    # Esto convierte "1,2,3" en [1, 2, 3] y evita errores con strings vacíos
-    if raw_ids:
-        receta_ids = [int(x) for x in raw_ids.split(',') if x.isdigit()]
-    else:
-        receta_ids = []
-
-    # Diccionario para consolidar (Sumar ingredientes iguales)
-    # Clave: (nombre_ingrediente, unidad) -> Valor: cantidad_acumulada
-    ingredientes_consolidados = {}
-
-    if receta_ids:
-        # Filtramos las recetas
-        recetas = Recetas.objects.filter(id_receta__in=receta_ids)
-        
-        # Buscamos TODOS los ingredientes de esas recetas
-        items_receta = RecetaIngredientes.objects.filter(id_receta__in=recetas).select_related('id_ingrediente')
-
-        for item in items_receta:
-            nombre = item.id_ingrediente.nombre
-            
-            # INTENTO DE OBTENER LA UNIDAD (Manejo de errores por inconsistencia de modelos)
-            # Prioridad 1: La unidad guardada en la relación (como en crear_receta)
-            # Prioridad 2: La unidad del ingrediente base
-            unidad = str(item.unidad) if item.unidad else "Unidad"
-
-            # Calculamos el total para este ítem
-            cantidad_total = item.cantidad * cant_comensales
-
-            # Lógica de Suma (Agrupación)
-            llave = (nombre, unidad)
-            
-            if llave in ingredientes_consolidados:
-                ingredientes_consolidados[llave] += cantidad_total
-            else:
-                ingredientes_consolidados[llave] = cantidad_total
-
-    # 3. Convertir el diccionario a una lista para el HTML
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        lista_final.append({
-            'nombre': nombre,
-            'cantidad_total': f"{cantidad:g}".replace('.', ','), # Formato bonito (elimina ceros extra)
-            'unidad': unidad
-        })
-
-    # Ordenar alfabéticamente
-    lista_final.sort(key=lambda x: x['nombre'])
-
-    # 4. Preparar contexto
-    data = {
-        'comensales': cant_comensales,
-        'ingredientes': lista_final,
-        'fecha': timezone.now().strftime("%d/%m/%Y"), # Fecha actual automática
-    }
-
-    # 5. Generar PDF
-    pdf = render_to_pdf('reporte_pdf.html', data)
-    
-    if pdf:
-        return HttpResponse(pdf, content_type='application/pdf')
-    
-    return HttpResponse("Error al generar el PDF", status=500)
+    return HttpResponse(pdf, content_type='application/pdf') if pdf else HttpResponse("Error", status=500)

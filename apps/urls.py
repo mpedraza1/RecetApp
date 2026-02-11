@@ -18,6 +18,9 @@ urlpatterns = [
     path("resumen-calculos/", views.resumen_calculos, name="resumen_calculos"),
     path("recetas-por-tipo/<int:id_tipo>/", views.recetas_por_tipo, name="recetas_por_tipo"),
     path("calcular-por-tipo/", views.calcular_por_tipo, name="calcular_por_tipo"),
-    path("generar-informe/", views.generar_informe_pdf, name="generar_informe")
+    path("generar-informe/", views.generar_informe_pdf, name="generar_informe"),
+    path('agregar-al-resumen/', views.agregar_al_resumen, name='agregar_al_resumen'),
+    path('obtener-acumulados/', views.obtener_acumulados, name='obtener_acumulados'),
+    path('eliminar-receta-resumen/<int:index>/', views.eliminar_receta_resumen, name='eliminar_receta_resumen'),
     
 ]

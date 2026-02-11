@@ -89,6 +89,7 @@
         <div class="col-6 col-md-3 d-grid">
           <button
             type="button"
+            id="btn-agregar"
             class="btn btn-purple"
             style="background: #8a2be2; color: white"
           >
@@ -135,6 +136,25 @@
         <tbody id="tbodyIngredientes">
           <!-- Aquí JS insertará las filas -->
         </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="container mt-4" id="seccionAcumulados" style="display: none;">
+    <hr />
+    <h4 class="mb-3 text-center" style="color: #8a2be2;">Resumen para el Informe</h4>
+    <div class="table-responsive">
+      <table class="table table-bordered align-middle text-center shadow-sm">
+        <thead class="table-dark">
+          <tr>
+            <th>Fecha</th>
+            <th>Recetas Seleccionadas</th>
+            <th>Comensales</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="tbodyAcumulados">
+          </tbody>
       </table>
     </div>
   </div>
@@ -360,31 +380,100 @@
     }
 
     // =========================================================
-    // 7. BOTÓN INFORME (PDF)
+    // 7. BOTÓN INFORME (PDF desde Sesión)
     // =========================================================
     if (btnInforme) {
-      btnInforme.addEventListener("click", function () {
-        let comensales = inputComensales.value || 1;
-        let fecha = inputFecha ? inputFecha.value : "";
-        let ids = [];
-
-        if (selectReceta.value) ids.push(selectReceta.value);
-        if (selectReceta2 && !selectReceta2.disabled && selectReceta2.value) {
-          ids.push(selectReceta2.value);
-        }
-
-        if (ids.length === 0) {
-          alert("Selecciona una receta primero");
-          return;
-        }
-        window.open(
-          `/generar-informe/?comensales=${comensales}&recetas=${ids.join(
-            ","
-          )}&fecha=${fecha}`,
-          "_blank"
-        );
-      });
+        btnInforme.addEventListener("click", function () {
+            // Simplemente abrimos la URL del PDF. 
+            // Django leerá la sesión internamente.
+            window.open('/generar-informe/', '_blank');
+        });
     }
+    // =========================================================
+    // 8. LÓGICA PARA AGREGAR RECETAS AL RESUMEN (SESIÓN)
+    // =========================================================
+    const btnAgregar = document.getElementById("btn-agregar");
+    const seccionAcumulados = document.getElementById("seccionAcumulados");
+    const tbodyAcumulados = document.getElementById("tbodyAcumulados");
+
+    // Función para "dibujar" la tabla de resumen con lo que hay en la sesión
+    const actualizarTablaResumen = (lista) => {
+        if (!lista || lista.length === 0) {
+            seccionAcumulados.style.display = "none";
+            return;
+        }
+
+        tbodyAcumulados.innerHTML = "";
+        lista.forEach((item, index) => {
+            tbodyAcumulados.innerHTML += `
+                <tr>
+                    <td>${item.fecha}</td>
+                    <td class="text-start">${item.nombres}</td>
+                    <td>${item.comensales}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelResumen(${index})">
+                            <i class="bi bi-trash"></i> Quitar
+                        </button>
+                    </td>
+                </tr>`;
+        });
+        seccionAcumulados.style.display = "block";
+    };
+
+    // Acción al presionar el botón "Agregar"
+    if (btnAgregar) {
+        btnAgregar.addEventListener("click", function () {
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]').value;
+
+            // Validamos que al menos la primera receta esté seleccionada
+            if (!selectReceta.value) {
+                alert("Selecciona una receta antes de agregarla al informe.");
+                return;
+            }
+
+            const payload = {
+                fecha: inputFecha.value || new Date().toISOString().split('T')[0],
+                comensales: inputComensales.value || 1,
+                receta_id: selectReceta.value,
+                receta_dos_id: (!selectReceta2.disabled && selectReceta2.value) ? selectReceta2.value : null,
+                // Enviamos los nombres para que la tabla se vea bien de inmediato
+                nombre1: selectReceta.options[selectReceta.selectedIndex].text,
+                nombre2: selectReceta2.options[selectReceta2.selectedIndex]?.text
+            };
+
+            fetch('/agregar-al-resumen/', {
+                method: "POST",
+                body: JSON.stringify(payload),
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": csrfToken,
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'ok') {
+                    actualizarTablaResumen(data.recetas);
+                    // Opcional: limpiar los selects para la siguiente receta
+                    selectTipo.value = "";
+                    selectReceta.innerHTML = '<option value="">Seleccione una receta</option>';
+                    toggleMensajeAyuda(false);
+                }
+            })
+            .catch(error => console.error("Error al agregar:", error));
+        });
+    }
+
+    // Función global para eliminar ítems (se llama desde el botón de la tabla)
+    window.eliminarDelResumen = function(index) {
+        fetch(`/eliminar-receta-resumen/${index}/`)
+            .then(r => r.json())
+            .then(data => actualizarTablaResumen(data.recetas));
+    };
+
+    // Cargar datos automáticamente al abrir la página por si ya había algo guardado
+    fetch('/obtener-acumulados/')
+        .then(r => r.json())
+        .then(data => actualizarTablaResumen(data.recetas));
   });
 </script>
 
