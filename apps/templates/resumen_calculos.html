@@ -101,19 +101,18 @@
       <!-- ===================================================== -->
       <!-- FILA 5: BOTÓN INFORME -->
       <!-- ===================================================== -->
-      <div class="row g-3 justify-content-center mt-4">
-        <div class="col-8 col-md-4 d-grid">
-          <button
-            type="button"
-            id="btn-generar-informe"
-            class="btn btn-primary"
-          >
-            Generar Informe
+  <div class="row g-3 justify-content-center mt-4">
+      <div class="col-6 col-md-4 d-grid">
+          <button type="button" id="btn-informe-receta" class="btn btn-info">
+              <i class="bi bi-journal-text"></i> Resumen por Receta
           </button>
-        </div>
       </div>
-    </div>
-  </form>
+      <div class="col-6 col-md-4 d-grid">
+          <button type="button" id="btn-informe-total" class="btn btn-success">
+              <i class="bi bi- calculator"></i> Resumen Total
+          </button>
+      </div>
+  </div>
 
   <hr />
 
@@ -382,11 +381,18 @@
     // =========================================================
     // 7. BOTÓN INFORME (PDF desde Sesión)
     // =========================================================
-    if (btnInforme) {
-        btnInforme.addEventListener("click", function () {
-            // Simplemente abrimos la URL del PDF. 
-            // Django leerá la sesión internamente.
-            window.open('/generar-informe/', '_blank');
+    const btnInformeReceta = document.getElementById("btn-informe-receta");
+    const btnInformeTotal = document.getElementById("btn-informe-total");
+
+    if (btnInformeReceta) {
+        btnInformeReceta.addEventListener("click", () => {
+            window.open('/generar-informe/?tipo=detalle', '_blank');
+        });
+    }
+
+    if (btnInformeTotal) {
+        btnInformeTotal.addEventListener("click", () => {
+            window.open('/generar-informe/?tipo=total', '_blank');
         });
     }
     // =========================================================
@@ -403,21 +409,48 @@
             return;
         }
 
-        tbodyAcumulados.innerHTML = "";
+        tbodyAcumulados.innerHTML = ""; // Limpiamos la tabla antes de dibujar
+        let ultimaFecha = ""; // Variable para detectar cuándo cambia el día
+
         lista.forEach((item, index) => {
-            tbodyAcumulados.innerHTML += `
-                <tr>
-                    <td>${item.fecha}</td>
-                    <td class="text-start">${item.nombres}</td>
-                    <td>${item.comensales}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarDelResumen(${index})">
-                            <i class="bi bi-trash"></i> Quitar
-                        </button>
-                    </td>
-                </tr>`;
+            // LÓGICA DE SEPARADOR DE DÍA (Punto 2 de la coordinadora)
+            // Si la fecha de esta receta es distinta a la anterior, ponemos un encabezado
+            if (item.fecha !== ultimaFecha) {
+                const filaFecha = document.createElement("tr");
+                filaFecha.innerHTML = `
+                    <td colspan="4" class="table-secondary text-center py-2" style="background-color: #e9ecef; border-top: 2px solid #6f42c1;">
+                        <strong class="text-dark">
+                            <i class="bi bi-calendar3"></i> Preparaciones para el: ${formatearFechaLarga(item.fecha)}
+                        </strong>
+                    </td>`;
+                tbodyAcumulados.appendChild(filaFecha);
+                ultimaFecha = item.fecha; // Guardamos esta fecha para comparar con la siguiente
+            }
+
+            // Dibujamos la fila normal de la receta
+            const fila = document.createElement("tr");
+            fila.innerHTML = `
+                <td>${item.fecha}</td>
+                <td class="text-start">${item.nombres}</td>
+                <td>${item.comensales}</td>
+                <td>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarDelResumen(${index})">
+                        <i class="bi bi-trash"></i> Quitar
+                    </button>
+                </td>
+            `;
+            tbodyAcumulados.appendChild(fila);
         });
-        seccionAcumulados.style.display = "block";
+
+        seccionAcumulados.style.display = "block"; // Mostramos la tabla
+    };
+
+    // Esta función ayuda a que la fecha se vea "lunes, 15 de febrero" en vez de "2026-02-15"
+    function formatearFechaLarga(fechaStr) {
+        if(!fechaStr) return "Sin fecha";
+        const opciones = { weekday: 'long', day: 'numeric', month: 'long' };
+        const fecha = new Date(fechaStr + "T12:00:00"); 
+        return fecha.toLocaleDateString('es-ES', opciones);
     };
 
     // Acción al presionar el botón "Agregar"

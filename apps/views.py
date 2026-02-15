@@ -146,16 +146,41 @@ def recetas_por_tipo(request, id_tipo):
 
 @login_personalizado_required
 def resumen_calculos(request):
+    if request.method == "GET":
+        request.session['resumen_recetas'] = []
+        request.session.modified = True
+        
     tipos_comida = TiposComida.objects.all()
     ingredientes = Ingredientes.objects.all()
 
+    # 1. Recuperamos la lista de recetas que ya hemos guardado en la sesión
+    # Si no existe, creamos una lista vacía []
+    resumen_acumulado = request.session.get('resumen_recetas', [])
+
     calculo = None  
+
     if request.method == "POST":
         receta_id = request.POST.get("receta")
-        comensales = int(request.POST.get("comensales", 1))      
+        receta_dos_id = request.POST.get("receta_dos") # Por si eliges acompañamiento
+        
+        # Captura segura de comensales (tu lógica)
+        raw_comensales = request.POST.get("comensales", "1")
+        try:
+            comensales = int(raw_comensales) if raw_comensales.strip() != "" else 1
+        except ValueError:
+            comensales = 1
+
+        # --- NUEVO: Captura de Fecha (Punto 2) ---
+        fecha_receta = request.POST.get("fecha_receta")
+        if not fecha_receta:
+            from django.utils import timezone
+            fecha_receta = timezone.now().strftime("%Y-%m-%d")
+
+        # Obtenemos la receta para el cálculo inmediato
         receta = Recetas.objects.get(id_receta=receta_id)
         ingredientes_receta = RecetaIngredientes.objects.filter(id_receta=receta)
 
+        # Tu lógica de cálculo para la receta actual (el botón "Calcula")
         calculo = []
         for item in ingredientes_receta:
             cantidad_total = item.cantidad * comensales
@@ -166,10 +191,35 @@ def resumen_calculos(request):
                 "cantidad_total": cantidad_total
             })
 
+        # --- NUEVO: Guardar en el resumen para el Informe (Punto 1 y 2) ---
+        # Guardamos los datos mínimos para poder procesar el informe después
+# 1. Creamos la estructura de la receta (Punto 1 y 2)
+        nueva_entrada = {
+            'fecha': fecha_receta,
+            'comensales': comensales,
+            'receta_id': receta_id,
+            'receta_dos_id': receta_dos_id,
+            'nombres': receta.nombre + (f" + {Recetas.objects.get(id_receta=receta_dos_id).nombre}" if receta_dos_id else "")
+        }
+        
+        # 2. La agregamos a la lista que recuperamos al principio de la función
+        resumen_acumulado.append(nueva_entrada)
+        
+        # 3. ORDENAR POR FECHA (Vital para el requerimiento Punto 2)
+        # Esto asegura que el separador gris en el HTML y el PDF funcione bien
+        resumen_acumulado.sort(key=lambda x: x['fecha'])
+        
+        # 4. GUARDAR EN LA SESIÓN (Aquí estaba tu error anterior)
+        # Debes asignar la lista a la sesión, no al revés.
+        request.session['resumen_recetas'] = resumen_acumulado
+        request.session.modified = True  # Avisamos a Django que la sesión cambió
+
+    # Fuera del IF del POST, el contexto envía la lista actualizada
     context = {
         "tipos_comida": tipos_comida,
         "ingredientes": ingredientes,
-        "calculo": calculo
+        "calculo": calculo,
+        "resumen_recetas": resumen_acumulado 
     }
 
     return render(request, "resumen_calculos.html", context)
@@ -226,6 +276,9 @@ def agregar_al_resumen(request):
                 'receta_dos_id': data.get('receta_dos_id'),
                 'nombres': nombres
             })
+            
+            # --- PUNTO 2: ORDENAR POR FECHA ---
+            resumen.sort(key=lambda x: x['fecha']) 
             
             request.session['resumen_recetas'] = resumen
             request.session.modified = True
@@ -471,59 +524,65 @@ def editar_usuario_admin(request, id_usuario):
     return redirect('usuarios')
 
 def generar_informe_pdf(request):
-    # 1. Obtenemos todo el acumulado de la sesión
-    resumen = request.session.get('resumen_recetas', [])
-    
-    if not resumen:
-        return HttpResponse("No hay recetas agregadas para generar el informe.", status=400)
+    resumen_sesion = request.session.get('resumen_recetas', [])
+    tipo_reporte = request.GET.get('tipo', 'total')
 
-    ingredientes_consolidados = {}
-    nombres_recetas_list = []
-    fecha_reporte = resumen[0]['fecha'] # Usamos la fecha de la primera entrada
+    if not resumen_sesion:
+        return HttpResponse("No hay datos en la sesión.", status=400)
 
-    # 2. Iteramos sobre cada selección guardada
-    for item in resumen:
-        comensales = int(item['comensales'])
-        ids_a_procesar = [item['receta_id']]
-        if item.get('receta_dos_id'):
-            ids_a_procesar.append(item['receta_dos_id'])
+    # 1. Siempre ordenamos por fecha para que el agrupamiento funcione
+    resumen_sesion.sort(key=lambda x: x['fecha'])
+
+    if tipo_reporte == 'total':
+        # --- RESUMEN TOTAL: AGRUPADO POR DÍA ---
+        reporte_final_por_dia = []
+        from itertools import groupby
         
-        recetas = Recetas.objects.filter(id_receta__in=[id for id in ids_a_procesar if id])
-        
-        for r in recetas:
-            if r.nombre not in nombres_recetas_list:
-                nombres_recetas_list.append(r.nombre)
+        for fecha, registros in groupby(resumen_sesion, key=lambda x: x['fecha']):
+            totales_del_dia = {}
+            for reg in registros:
+                # Procesamos receta principal y acompañamiento
+                for r_id in [reg['receta_id'], reg.get('receta_dos_id')]:
+                    if r_id:
+                        # Usamos la función que ya arreglamos en utils.py
+                        ingredientes_calculados = obtener_calculo_receta(r_id, reg['comensales'])
+                        if ingredientes_calculados:
+                            for ing in ingredientes_calculados:
+                                llave = (ing['ingrediente'], ing['unidad'])
+                                # Quitamos formato (. y ,) para sumar el número puro
+                                valor_limpio = float(ing['cantidad_total'].replace('.', '').replace(',', '.'))
+                                totales_del_dia[llave] = totales_del_dia.get(llave, 0) + valor_limpio
+
+            # Formateamos los resultados de este día
+            lista_formateada = []
+            for (nombre, unidad), total in totales_del_dia.items():
+                cant_fmt, uni_fmt = formatear_cantidad_inteligente(total, unidad)
+                lista_formateada.append({'nombre': nombre, 'cantidad': cant_fmt, 'unidad': uni_fmt})
             
-            # Buscamos ingredientes de esta receta específica
-            items_rel = RecetaIngredientes.objects.filter(id_receta=r).select_related('id_ingrediente')
-            for rel in items_rel:
-                nombre_ing = rel.id_ingrediente.nombre
-                unidad = str(rel.unidad) if rel.unidad else "Unidad"
-                cantidad_total = rel.cantidad * comensales
-                
-                llave = (nombre_ing, unidad)
-                ingredientes_consolidados[llave] = ingredientes_consolidados.get(llave, 0) + cantidad_total
+            reporte_final_por_dia.append({
+                'fecha': fecha,
+                'ingredientes': sorted(lista_formateada, key=lambda x: x['nombre'])
+            })
 
-    # 3. Formateo para el PDF
-    lista_final = []
-    for (nombre, unidad), cantidad in ingredientes_consolidados.items():
-        cant_fmt, unidad_fmt = formatear_cantidad_inteligente(cantidad, unidad)
-        lista_final.append({
-            'nombre': nombre,
-            'cantidad_total': cant_fmt,
-            'unidad': unidad_fmt
+        return render_to_pdf('reporte_total_pdf.html', {
+            'reporte_por_dia': reporte_final_por_dia,
+            'fecha_actual': datetime.now().strftime("%d/%m/%Y")
         })
-    lista_final.sort(key=lambda x: x['nombre'])
 
-    contexto = {
-        'nombres_recetas': ", ".join(nombres_recetas_list),
-        'ingredientes': lista_final,
-        'fecha': datetime.strptime(fecha_reporte, "%Y-%m-%d").strftime("%d/%m/%Y") if '-' in fecha_reporte else fecha_reporte,
-    }
+    else:
+        # --- RESUMEN POR RECETA: (Ya mencionaste que funciona bien) ---
+        reporte_detalle = []
+        for item in resumen_sesion:
+            ing_1 = obtener_calculo_receta(item['receta_id'], item['comensales']) or []
+            ing_2 = obtener_calculo_receta(item['receta_dos_id'], item['comensales']) or []
+            reporte_detalle.append({
+                'fecha': item['fecha'],
+                'nombres': item['nombres'],
+                'comensales': item['comensales'],
+                'ingredientes': ing_1 + ing_2
+            })
 
-    pdf = render_to_pdf('reporte_pdf.html', contexto)
-    
-    # OPCIONAL: Si quieres que al generar el PDF se limpie la lista para la próxima vez
-    # request.session['resumen_recetas'] = []
-    
-    return HttpResponse(pdf, content_type='application/pdf') if pdf else HttpResponse("Error", status=500)
+        return render_to_pdf('reporte_detalle_pdf.html', {
+            'reporte': reporte_detalle,
+            'fecha_actual': datetime.now().strftime("%d/%m/%Y")
+        })

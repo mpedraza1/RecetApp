@@ -25,6 +25,7 @@ def obtener_calculo_receta(id_receta, comensales):
     """
     if not id_receta:
         return None
+    comensales = int(comensales)
         
     try:
         receta = Recetas.objects.get(id_receta=id_receta)

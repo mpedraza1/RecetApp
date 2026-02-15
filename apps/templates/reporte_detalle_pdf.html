@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <style>
+        body { font-family: sans-serif; }
+        .dia-encabezado { background-color: #f0f0f0; padding: 5px; margin-top: 15px; border-bottom: 2px solid #8a2be2; }
+    </style>
+</head>
+<body>
+    <h2>RESUMEN POR PREPARACIÓN</h2>
+    <p>Generado el: {{ fecha_actual }}</p>
+
+    {% regroup reporte by fecha as recetas_por_dia %}
+
+    {% for dia in recetas_por_dia %}
+        <div class="dia-encabezado">
+            <strong>DÍA: {{ dia.grouper }}</strong>
+        </div>
+
+        {% for item in dia.list %}
+            <div style="margin-bottom: 15px; padding: 10px; border-bottom: 1px dashed #ccc;">
+                <strong>{{ item.nombres }} ({{ item.comensales }} pers.)</strong>
+                <table style="width: 100%;">
+                    {% for ing in item.ingredientes %}
+                    <tr>
+                        <td width="70%">{{ ing.ingrediente }}</td>
+                        <td>{{ ing.cantidad_total }} {{ ing.unidad }}</td>
+                    </tr>
+                    {% endfor %}
+                </table>
+            </div>
+        {% endfor %}
+    {% endfor %}
+</body>
+</html>

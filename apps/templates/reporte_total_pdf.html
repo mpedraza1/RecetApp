@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: sans-serif; }
+        .dia-seccion { margin-top: 20px; border-bottom: 2px solid #8a2be2; background-color: #f8f9fa; padding: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body>
+    <h1 style="text-align: center;">RESUMEN TOTAL POR DÍA</h1>
+    
+    {% for dia in reporte_por_dia %}
+        <div class="dia-seccion">
+            <strong>DÍA: {{ dia.fecha }}</strong>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th>Ingrediente</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ing in dia.ingredientes %}
+                <tr>
+                    <td>{{ ing.nombre }}</td>
+                    <td>{{ ing.cantidad }}</td>
+                    <td>{{ ing.unidad }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+</body>
+</html>
