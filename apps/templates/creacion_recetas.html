@@ -4,7 +4,8 @@
 {% block content %}
 <div class="contenedor-central">
 
-    <h2>Crear Nueva Receta</h2>
+    <h2>{% if es_edicion %}Editar Receta: {{ receta.nombre }}{% else %}Crear Nueva Receta{% endif %}</h2>
+    
     {% if messages %}
         <ul style="list-style: none; padding: 0; margin-bottom: 20px;">
             {% for message in messages %}
@@ -20,26 +21,54 @@
         </ul>
     {% endif %}
 
+    <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; border: 1px solid #dee2e6; margin-bottom: 25px;">
+        <label><strong>Buscador rápido de recetas:</strong></label><br>
+        
+        <input type="text" id="filtro-receta" placeholder="Escribe una letra o nombre..." 
+            style="width: 100%; padding: 8px; margin-bottom: 5px; border-radius: 4px; border: 1px solid #ccc;">
+
+        <select id="selector-receta" 
+                onchange="if(this.value) window.location.href='/gestion-recetas/'+this.value; else window.location.href='/gestion-recetas/';" 
+                style="width: 100%; padding: 10px; border-radius: 4px; border: 1px solid #ccc;">
+            
+            <option value="">-- Crear una receta nueva desde cero --</option>
+            {% for r in todas_las_recetas %}
+                <option value="{{ r.id_receta }}" {% if receta.id_receta == r.id_receta %}selected{% endif %}>
+                    {{ r.nombre }} ({% if r.estado == 1 %}Activa{% else %}Inactiva{% endif %})
+                </option>
+            {% endfor %}
+        </select>
+    </div>
+
     <form method="POST">
         {% csrf_token %}
 
-    
-    <form method="POST">
-        {% csrf_token %}
+        {% if es_edicion %}
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #fff3cd; padding: 10px; border-radius: 4px; margin-bottom: 20px; border: 1px solid #ffeeba;">
+            <span>Estado: <strong>{% if receta.estado == 1 %}ACTIVA{% else %}INACTIVA{% endif %}</strong></span>
+            <button type="submit" name="cambiar_estado" value="true" class="boton-estado"
+                    style="background-color: {% if receta.estado == 1 %}#e67e22{% else %}#27ae60{% endif %}; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">
+                {% if receta.estado == 1 %}Desactivar Receta{% else %}Reactivar Receta{% endif %}
+            </button>
+        </div>
+        {% endif %}
         
         <label class="campo">
             <strong>Nombre de la receta:</strong><br>
-            <input type="text" name="nombre_receta" placeholder="Ingrese el nombre de la nueva receta">
+            <input type="text" name="nombre_receta" 
+                   value="{% if es_edicion %}{{ receta.nombre }}{% endif %}" 
+                   placeholder="Ingrese el nombre de la receta">
         </label>
 
         <label class="campo" >
             <strong>Tipo de comida:</strong><br>
             <select name="tipo_comida" style= "border-radius: 6px !important; padding: 10px;" >
                 <option value="">Seleccione una opción</option>
-
-          
                 {% for tipo in tipos_comida %}
-                    <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+                    <option value="{{ tipo.id_tipo_comida }}" 
+                        {% if es_edicion and tipo.id_tipo_comida == receta.id_tipo_comida_id %}selected{% endif %}>
+                        {{ tipo.nombre }}
+                    </option>
                 {% endfor %}
             </select>
         </label>
@@ -49,155 +78,166 @@
         <strong>Ingresar ingredientes:</strong>
         
         <div id="ingredientes-container">
-
-          
-            <div class="ingrediente">
-
-                <select class="ingrediente-select" name="ingrediente" style="width: auto;">
-                    
-                    <option value="" data-unidad="">Seleccione un ingrediente</option>
-                    {% for ingrediente in ingredientes %}
-                        <option value="{{ ingrediente.id_ingrediente }}" data-unidad="{{ ingrediente.unidad_base }}">
-                            {{ ingrediente.nombre }}
-                        </option>
-                    {% endfor %}
+            {% if es_edicion %}
+                {% for ri in receta_ingredientes %}
+                <div class="ingrediente" style="margin-bottom: 10px;">
+                    <select class="ingrediente-select" name="ingrediente" style="width: auto;">
+                        <option value="" data-unidad="">Seleccione un ingrediente</option>
+                        {% for ing in ingredientes %}
+                            <option value="{{ ing.id_ingrediente }}" data-unidad="{{ ing.unidad_base }}"
+                                {% if ing.id_ingrediente == ri.id_ingrediente_id %}selected{% endif %}>
+                                {{ ing.nombre }}
+                            </option>
+                        {% endfor %}
                     </select>
 
-    
-                <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" placeholder="Cantidad">
+                    <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" 
+                           value="{{ ri.cantidad|stringformat:".2f" }}" placeholder="Cantidad">
 
-                <input class="input-unidad" type="text" name="unidad" readonly 
-                       style="width: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center;" 
-                       placeholder="-">
-                <button type="button" class="boton-mas">+</button>
-            </div>
-
+                    <input class="input-unidad" type="text" name="unidad" value="{{ ri.unidad }}" readonly 
+                           style="width: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center;">
+                    
+                    <button type="button" class="boton-mas">+</button>
+                    <button type="button" class="boton-eliminar" style="color: white; background-color: #dc3545; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px; cursor: pointer;">✕</button>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="ingrediente" style="margin-bottom: 10px;">
+                    <select class="ingrediente-select" name="ingrediente" style="width: auto;">
+                        <option value="" data-unidad="">Seleccione un ingrediente</option>
+                        {% for ingrediente in ingredientes %}
+                            <option value="{{ ingrediente.id_ingrediente }}" data-unidad="{{ ingrediente.unidad_base }}">
+                                {{ ingrediente.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" placeholder="Cantidad">
+                    <input class="input-unidad" type="text" name="unidad" readonly 
+                           style="width: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center;" 
+                           placeholder="-">
+                    <button type="button" class="boton-mas">+</button>
+                </div>
+            {% endif %}
         </div>
 
         <br>
-
-
-        <button class="guardar" type="submit">Guardar</button>
+        <button class="guardar" type="submit">
+            {% if es_edicion %}Actualizar Receta{% else %}Guardar Receta{% endif %}
+        </button>
 
     </form>
-
 </div>
-
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-
     const ingredientesContainer = document.getElementById('ingredientes-container');
     const form = document.querySelector("form");
 
+    const inputFiltro = document.getElementById('filtro-receta');
+    const selectorReceta = document.getElementById('selector-receta');
+
+    if (inputFiltro && selectorReceta) {
+        inputFiltro.addEventListener('input', function() {
+            const busqueda = this.value.toLowerCase();
+            const opciones = selectorReceta.options;
+
+            for (let i = 1; i < opciones.length; i++) {
+                const texto = opciones[i].text.toLowerCase();
+                // Usamos 'includes' para que sea más flexible al buscar
+                if (texto.includes(busqueda)) {
+                    opciones[i].style.display = "";
+                } else {
+                    opciones[i].style.display = "none";
+                }
+            }
+        });
+    }
+
+    // Manejo de cambio de unidad base
     ingredientesContainer.addEventListener('change', function(event) {
- 
         if (event.target.classList.contains('ingrediente-select')) {
             const select = event.target;
             const selectedOption = select.options[select.selectedIndex];
-            
-     
             const unidad = selectedOption.getAttribute('data-unidad');
-         
             const row = select.parentElement;
-            
-        
             const inputUnidad = row.querySelector('.input-unidad');
             
             if (inputUnidad) {
-               
-                if (unidad && unidad !== "None" && unidad !== "null") {
-                    inputUnidad.value = unidad;
-                } else {
-                    inputUnidad.value = "";
-                }
+                inputUnidad.value = (unidad && unidad !== "None" && unidad !== "null") ? unidad : "";
             }
         }
     });
 
-
+    // Delegación de eventos para botones + y ✕
     ingredientesContainer.addEventListener('click', function(event){
-
-       
+        // Agregar ingrediente
         if(event.target.classList.contains('boton-mas')){
-
-            
             const bloque = event.target.parentElement;
-
-            
             const nuevoBloque = bloque.cloneNode(true);
 
-            
+            // Limpiar campos del clon
             nuevoBloque.querySelector('.cantidad').value = "";
             nuevoBloque.querySelector('.ingrediente-select').selectedIndex = 0;
-    
             const inputUnidad = nuevoBloque.querySelector('.input-unidad');
             if (inputUnidad) inputUnidad.value = "";
 
+            // Asegurar que el nuevo bloque tenga botón de eliminar
+            if (!nuevoBloque.querySelector('.boton-eliminar')) {
+                const btnEliminar = document.createElement('button');
+                btnEliminar.type = "button";
+                btnEliminar.classList.add('boton-eliminar');
+                btnEliminar.style.cssText = "color: white; background-color: #dc3545; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px; cursor: pointer;";
+                btnEliminar.innerText = "✕";
+                nuevoBloque.appendChild(btnEliminar);
+            }
+
             ingredientesContainer.appendChild(nuevoBloque);
+        }
+
+        // Eliminar ingrediente
+        if(event.target.classList.contains('boton-eliminar')){
+            const filas = ingredientesContainer.querySelectorAll('.ingrediente');
+            if (filas.length > 1) {
+                event.target.parentElement.remove();
+            } else {
+                alert("La receta debe tener al menos un ingrediente.");
+            }
         }
     });
 
-
-   
+    // Validaciones de submit (sin cambios significativos)
     form.addEventListener("submit", function(event) {
-
         let errores = [];
-
-       
         const nombre = document.querySelector("input[name='nombre_receta']").value.trim();
         const tipo = document.querySelector("select[name='tipo_comida']").value;
-        
-    
         const list = Array.from(document.querySelectorAll(".ingrediente"));
 
-        if (nombre === "") errores.push("Debe ingresar un nombre para la receta.");
+        if (nombre === "") errores.push("Debe ingresar un nombre.");
         if (tipo === "") errores.push("Debe seleccionar un tipo de comida.");
 
         let vistos = new Set();
-
         list.forEach((row) => {
+            const select = row.querySelector(".ingrediente-select");
+            const ing = select.value;
+            const cant = row.querySelector(".cantidad").value;
+            const uni = row.querySelector(".input-unidad").value;
 
-            const ingredienteSelect = row.querySelector(".ingrediente-select"); 
-            const ingrediente = ingredienteSelect.value;                       
-            const cantidad = row.querySelector(".cantidad").value;
-            
-            
-            const unidad = row.querySelector(".input-unidad").value;
-
-         
-            if (ingrediente !== "") { 
-                if (vistos.has(ingrediente)) {
-                   
-                    errores.push("Hay ingredientes repetidos (" + ingredienteSelect.options[ingredienteSelect.selectedIndex].text + ").");
+            if (ing !== "") {
+                if (vistos.has(ing)) {
+                    errores.push("Ingrediente repetido: " + select.options[select.selectedIndex].text);
                 } else {
-                    vistos.add(ingrediente);
-                }
-
-                
-                if (!unidad) {
-                    errores.push("El ingrediente '" + ingredienteSelect.options[ingredienteSelect.selectedIndex].text + "' no tiene unidad base (gr/ml) configurada en la base de datos.");
+                    vistos.add(ing);
                 }
             }
-
-   
-            if (cantidad === "" || parseFloat(cantidad) <= 0) {
-                errores.push("Las cantidades deben ser mayores a 0.");
-            }
-
-           
-            if (!unidad) {
-                errores.push("Debe seleccionar una unidad para cada ingrediente.");
-            }
+            if (cant === "" || parseFloat(cant) <= 0) errores.push("Cantidades deben ser > 0.");
+            if (!uni || uni === "-") errores.push("Falta unidad base en un ingrediente.");
         });
 
         if (errores.length > 0) {
             event.preventDefault();
-            alert("Errores encontrados:\n\n" + errores.join("\n"));
+            alert("Errores:\n" + errores.join("\n"));
         }
-
     });
 });
 </script>
-
 {% endblock %}

@@ -10,7 +10,8 @@ urlpatterns = [
         # Ruta de Recuperar
     path('recuperar/', views.recuperar_a, name='recuperar_a'),
     path('recuperar/nueva/', views.recuperar_b, name='recuperar_b'),
-    path("creacion-recetas/", views.crear_receta, name="crear_receta"),
+    path('gestion-recetas/', views.gestion_recetas, name='gestion_recetas'),
+    path('gestion-recetas/<int:id_receta>/', views.gestion_recetas, name='gestion_recetas_edit'),
     path('usuarios/', views.gestion_usuarios, name='usuarios'),
         # Rutas ocultas (Acciones)
     path('usuarios/crear/', views.crear_usuario_admin, name='crear_usuario_admin'),

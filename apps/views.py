@@ -17,131 +17,97 @@ from django.db.models import F
 from datetime import datetime
 
 @login_personalizado_required
-@transaction.atomic # ⬅️ USAMOS EL DECORADOR PARA TRANSACCIÓN
-def crear_receta(request):
-   
+@transaction.atomic
+def gestion_recetas(request, id_receta=None):
+    # Cargamos datos para los selectores del template
+    todas_las_recetas = Recetas.objects.all().order_by('nombre')
+    ingredientes = Ingredientes.objects.all()
+    tipos_comida = TiposComida.objects.all()
+    
+    # Inicialización de variables de contexto
+    receta = None
+    receta_ingredientes = []
+    es_edicion = False
+
+    # MODO EDICIÓN: Si recibimos un ID, cargamos la receta de Postgres
+    if id_receta:
+        receta = get_object_or_404(Recetas, pk=id_receta)
+        receta_ingredientes = RecetaIngredientes.objects.filter(id_receta=receta)
+        es_edicion = True
+
     if request.method == "POST":
+        # ACCIÓN 1: Cambiar Estado (Inactivar/Activar)
+        if 'cambiar_estado' in request.POST and receta:
+            receta.estado = 0 if receta.estado == 1 else 1
+            receta.updated_at = timezone.now()
+            receta.save()
+            messages.success(request, f"Estado de '{receta.nombre}' actualizado a {'Inactivo' if receta.estado == 0 else 'Activo'}.")
+            return redirect('gestion_recetas_edit', id_receta=receta.id_receta)
 
-      
+        # ACCIÓN 2: Guardar (Crear o Modificar)
         nombre = request.POST.get("nombre_receta", "").strip()
-        tipo_comida = request.POST.get("tipo_comida")
-
-        ingredientes_ids = request.POST.getlist("ingrediente") 
-        cantidades_str = request.POST.getlist("cantidad")      
+        tipo_comida_id = request.POST.get("tipo_comida")
+        ingredientes_ids = request.POST.getlist("ingrediente")
+        cantidades_str = request.POST.getlist("cantidad")
         unidades = request.POST.getlist("unidad")
 
-        errores = []  
-        
-       
-        print(f"DEBUG: Recibí listas del HTML -> IDs: {ingredientes_ids} | Cantidades: {cantidades_str}")
+        # Validaciones básicas
+        if not nombre or not tipo_comida_id:
+            messages.error(request, "El nombre y el tipo de comida son obligatorios.")
+            return redirect(request.path)
 
-        ingredientes_validos = []
-        
-        for i, ing_id in enumerate(ingredientes_ids):
-            ing_id = ing_id.strip()
-            texto_cantidad = cantidades_str[i]
-            
-            print(f"--- Analizando Fila {i} ---")
-            print(f"   1. ID Ingrediente: '{ing_id}'")
-            print(f"   2. Texto Cantidad: '{texto_cantidad}'")
-
-            try:
-                
-                cantidad = float(texto_cantidad.replace(',', '.'))
-                print(f"   3. Conversión Exitosa: El número es {cantidad}")
-            except Exception as e:
-                print(f"   3. ERROR DE CONVERSIÓN: {e}")
-                cantidad = 0
-
-            unidad = unidades[i].strip() if i < len(unidades) else ""
-            
-      
-            if cantidad > 0 and ing_id:
-                print("   RESULTADO: APROBADO ✅")
-                ingredientes_validos.append({
-                    'id': ing_id,
-                    'cantidad': cantidad,
-                    'unidad': unidad
-                })
-            else:
-                print(f"   RESULTADO: RECHAZADO ❌ (Cant: {cantidad}, ID: '{ing_id}')")
-
-        if not nombre:
-            errores.append("Debe ingresar un nombre para la receta.")
-
-        if not tipo_comida or not TiposComida.objects.filter(id_tipo_comida=tipo_comida).exists():
-            errores.append("Tipo de comida inválido.")
-
-   
-        if not ingredientes_validos:
-            errores.append("Debe ingresar al menos un ingrediente con cantidad mayor a cero.")
-            
-        usados = set()  
-
-        for ing_data in ingredientes_validos:
-
-            ing_id = ing_data['id']
-            cantidad = ing_data['cantidad']
-            unidad = ing_data['unidad']
-
-         
-            if ing_id in usados:
-                errores.append("Hay ingredientes repetidos.")
-            else:
-                usados.add(ing_id)
-
-            if unidad == "":
-                errores.append(f"Debe seleccionar una unidad para el ingrediente ID: {ing_id}.")
-                
-          
-            if not Ingredientes.objects.filter(pk=ing_id).exists():
-                 errores.append(f"El ingrediente ID '{ing_id}' no es válido o no existe.")
-
-        
-        if errores:
-            
-            for e in errores:
-                messages.error(request, e)  
-            return redirect("crear_receta") 
-
-
-        
-        receta = Recetas.objects.create(
-            nombre=nombre,
-            id_tipo_comida_id=tipo_comida, 
-            estado=1,                      
-            created_at=timezone.now(),
-            updated_at=timezone.now(),
-        )
-
-  
-        for ing_data in ingredientes_validos:
-            RecetaIngredientes.objects.create(
-                id_receta=receta,              
-                id_ingrediente_id=ing_data['id'], 
-                cantidad=ing_data['cantidad'],
-                unidad=ing_data['unidad']
+        # Transacción de la Receta
+        if es_edicion:
+            receta.nombre = nombre
+            receta.id_tipo_comida_id = tipo_comida_id
+            receta.updated_at = timezone.now()
+            receta.save()
+            # Limpiamos ingredientes previos para re-insertar (más seguro)
+            RecetaIngredientes.objects.filter(id_receta=receta).delete()
+        else:
+            receta = Recetas.objects.create(
+                nombre=nombre,
+                id_tipo_comida_id=tipo_comida_id,
+                estado=1,
+                created_at=timezone.now(),
+                updated_at=timezone.now()
             )
 
-       
-        messages.success(request, "Receta agregada correctamente.")
-        
-       
-        return redirect("crear_receta")
+        # Inserción de Ingredientes
+        for i, ing_id in enumerate(ingredientes_ids):
+            if ing_id and i < len(cantidades_str):
+                try:
+                    cantidad = float(cantidades_str[i].replace(',', '.'))
+                    if cantidad > 0:
+                        RecetaIngredientes.objects.create(
+                            id_receta=receta,
+                            id_ingrediente_id=ing_id,
+                            cantidad=cantidad,
+                            unidad=unidades[i]
+                        )
+                except (ValueError, IndexError):
+                    continue
 
+        messages.success(request, "Receta guardada exitosamente.")
+        return redirect('gestion_recetas_edit', id_receta=receta.id_receta)
 
-    
     context = {
-        "ingredientes": Ingredientes.objects.all(), 
-        "tipos_comida": TiposComida.objects.all()    
+        "todas_las_recetas": todas_las_recetas,
+        "ingredientes": ingredientes,
+        "tipos_comida": tipos_comida,
+        "receta": receta,
+        "receta_ingredientes": receta_ingredientes,
+        "es_edicion": es_edicion
     }
-
     return render(request, "creacion_recetas.html", context)
 
-
-
 def recetas_por_tipo(request, id_tipo):
-    recetas = Recetas.objects.filter(id_tipo_comida=id_tipo).values("id_receta", "nombre")
+    # Agregamos 'estado=1' para que solo devuelva recetas activas
+    recetas = Recetas.objects.filter(
+        id_tipo_comida=id_tipo, 
+        estado=1
+    ).values("id_receta", "nombre")
+    
     return JsonResponse(list(recetas), safe=False)
 
 @login_personalizado_required
@@ -338,7 +304,7 @@ def login_view(request):
                         return redirect('resumen_calculos')
                     
                     elif role_id == 2:
-                        return redirect('crear_receta')
+                        return redirect('gestion_recetas')
                     
                     else:
                         messages.warning(request, "Tu rol no tiene una página de inicio asignada.")
