@@ -164,12 +164,14 @@
     // =========================================================
     // 1. CONFIGURACIÓN DE IDs (¡REVISA ESTO CON TU BASE DE DATOS!)
     // =========================================================
-    const ID_PROTEINA = 2; // Ejemplo: Almuerzo - Fondo
+    const ID_PROTEINA = 2; // Ejemplo: Almuerzo - Proteina
     const ID_GUARNICION = 3; // Ejemplo: Almuerzo - Acompañamiento
     const ID_COMPUESTO = 5; // Ejemplo: Almuerzo - Completo
+    const ID_DESAYUNO_ONCE = 1;
+    
 
     // IDs que bloquean totalmente la segunda fila
-    const dashabilitados = [1, 4, ID_COMPUESTO];
+    const dashabilitados = [4, ID_COMPUESTO];
 
     // =========================================================
     // 2. SELECTORES
@@ -245,7 +247,7 @@
 
         // B. Decisión: ¿Bloquear o Habilitar?
         if (dashabilitados.includes(tipoId)) {
-          // CASO 1: Bloqueado (Desayuno/Once/Compuesto)
+          // CASO 1: Bloqueado (Compuesto)
           selectTipo2.disabled = true;
           selectReceta2.disabled = true;
 
@@ -272,6 +274,11 @@
           } else if (tipoId === ID_GUARNICION) {
             Array.from(selectTipo2.options).forEach((option) => {
               if (option.value != ID_PROTEINA && option.value != "")
+                option.hidden = true;
+            });
+          } else if (tipoId === ID_DESAYUNO_ONCE) {
+            Array.from(selectTipo2.options).forEach((option) => {
+              if (option.value != ID_DESAYUNO_ONCE && option.value != "")
                 option.hidden = true;
             });
           }

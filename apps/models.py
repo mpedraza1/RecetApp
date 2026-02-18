@@ -163,6 +163,8 @@ class Roles(models.Model):
     class Meta:
         managed = True
         db_table = 'roles'
+    def __str__(self):
+        return self.nombre
 
 
 class TiposComida(models.Model):
