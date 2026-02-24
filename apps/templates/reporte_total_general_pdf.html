@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: sans-serif; }
+        h1 { text-align: center; color: #333; }
+        .fecha-emision { text-align: right; font-size: 0.9em; margin-bottom: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        th { background-color: #8a2be2; color: white; border: 1px solid #ddd; padding: 10px; }
+        td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>RESUMEN TOTAL GENERAL </h1>
+    <p class="fecha-emision">Fecha de emisión: {{ fecha_actual }}</p>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Ingrediente</th>
+                <th>Cantidad Total</th>
+                <th>Unidad</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ing in ingredientes %}
+            <tr>
+                <td>{{ ing.nombre }}</td>
+                <td><strong>{{ ing.cantidad }}</strong></td>
+                <td>{{ ing.unidad }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" style="text-align: center;">No hay ingredientes acumulados.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

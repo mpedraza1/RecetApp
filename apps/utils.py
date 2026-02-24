@@ -6,17 +6,23 @@ from .models import RecetaIngredientes, Recetas
 
 def formatear_cantidad_inteligente(cantidad, unidad):
     """
-    Tu función lógica para convertir gr a Kg, ml a L, etc.
-    (Asegúrate de tener esta lógica definida aquí o importarla)
+    Convierte unidades y mantiene decimales para evitar subestimar cantidades.
     """
-    # Ejemplo rápido de lógica (ajusta según la tuya):
+    # 1. Conversión de unidades (mantiene decimales)
     if unidad.lower() == "gr" and cantidad >= 1000:
         return f"{cantidad / 1000:.2f}".replace(".", ","), "Kg"
     if unidad.lower() == "ml" and cantidad >= 1000:
         return f"{cantidad / 1000:.2f}".replace(".", ","), "L"
     
-    # Formateo por defecto (con puntos para miles)
-    cant_fmt = f"{int(cantidad):_}".replace("_", ".")
+    # 2. Formateo por defecto
+    # Si el número tiene decimales (ej: 1.5), los mostramos con coma.
+    # Si es un número redondo (ej: 2.0), lo mostramos sin decimales.
+    if cantidad % 1 == 0:
+        cant_fmt = f"{int(cantidad):_}".replace("_", ".")
+    else:
+        # Usamos 2 decimales, cambiamos punto por coma y agregamos separador de miles
+        cant_fmt = f"{cantidad:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+        
     return cant_fmt, unidad
 
 def obtener_calculo_receta(id_receta, comensales):
@@ -30,9 +36,11 @@ def obtener_calculo_receta(id_receta, comensales):
     try:
         receta = Recetas.objects.get(id_receta=id_receta)
         items = RecetaIngredientes.objects.filter(id_receta=receta)
-        total_en_bd = RecetaIngredientes.objects.count()
-        print(f"--- DEBUG GLOBAL ---")
-        print(f"Total de filas en la tabla RecetaIngredientes: {total_en_bd}")
+        if not items.exists():
+            print(f" Alerta: La receta '{receta.nombre}' (ID: {id_receta}) no tiene ingredientes configurados.")
+            return [] 
+
+        
         
         lista_final = []
         for item in items:

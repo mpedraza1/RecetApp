@@ -112,9 +112,6 @@ def recetas_por_tipo(request, id_tipo):
 
 @login_personalizado_required
 def resumen_calculos(request):
-    if request.method == "GET":
-        request.session['resumen_recetas'] = []
-        request.session.modified = True
         
     tipos_comida = TiposComida.objects.all()
     ingredientes = Ingredientes.objects.all()
@@ -198,31 +195,36 @@ def calcular_por_tipo(request):
         data = json.loads(request.body.decode("utf-8"))
         receta_id = data.get("receta_id")
         receta_dos_id = data.get("receta_dos")
+        comensales = int(data.get("comensales", 1))
+
+        # 1. SEGURIDAD: Obtenemos el cálculo base y verificamos que no sea None
+        calculo_uno = obtener_calculo_receta(receta_id, comensales) or []
+        calculo_dos = obtener_calculo_receta(receta_dos_id, comensales) or []
+
+        # 2. DEFINICIÓN DE EXTRAS
+        ids_postres = {"fruta": 147, "flan": 145, "jalea": 144} 
+        ID_ENSALADA = 143 
+        ID_JUGO = 146 
         
-        # Limpieza de comensales
-        try:
-            comensales = int(data.get("comensales", 1))
-        except (ValueError, TypeError):
-            comensales = 1
+        # 3. SUMAMOS EXTRAS SOLO SI LA LISTA PRINCIPAL ES VÁLIDA
+        if data.get("ensalada"):
+            extra = obtener_calculo_receta(ID_ENSALADA, comensales)
+            if extra: calculo_uno.extend(extra)
 
-        if not receta_id:
-            return JsonResponse({"error": "Falta el ID de la receta principal"}, status=400)
+        if data.get("jugo"):
+            extra = obtener_calculo_receta(ID_JUGO, comensales)
+            if extra: calculo_uno.extend(extra)
 
+        postre_seleccionado = data.get("postre")
+        if postre_seleccionado in ids_postres:
+            extra = obtener_calculo_receta(ids_postres[postre_seleccionado], comensales)
+            if extra: calculo_uno.extend(extra)
 
-        calculo_uno = obtener_calculo_receta(receta_id, comensales)
-        calculo_dos = obtener_calculo_receta(receta_dos_id, comensales)
-
-        if calculo_uno is None:
-            return JsonResponse({"error": "La receta principal no existe"}, status=404)
-
-        return JsonResponse({
-            "calculo": calculo_uno,
-            "calculo_dos": calculo_dos 
-        })
+        return JsonResponse({"calculo": calculo_uno, "calculo_dos": calculo_dos})
 
     except Exception as e:
         print(f"Error en servidor: {e}")
-        return JsonResponse({"error": "Error interno del servidor"}, status=500)
+        return JsonResponse({"error": str(e)}, status=500)
 
 def agregar_al_resumen(request):
     """Guarda la selección actual en la sesión del servidor."""
@@ -231,18 +233,21 @@ def agregar_al_resumen(request):
             data = json.loads(request.body)
             resumen = request.session.get('resumen_recetas', [])
             
-            nombres = data.get('nombre1', 'Receta')
+            nombres_combinados = data.get('nombre1', 'Receta')
             if data.get('nombre2') and data.get('nombre2') != "Seleccione una receta":
-                nombres += f" + {data['nombre2']}"
-
+                nombres_combinados += f" + {data['nombre2']}"
+                
             resumen.append({
-                'fecha': data.get('fecha', timezone.now().strftime("%Y-%m-%d")),
+                'fecha': data.get('fecha'),
                 'comensales': data.get('comensales', 1),
                 'receta_id': data.get('receta_id'),
                 'receta_dos_id': data.get('receta_dos_id'),
-                'nombres': nombres
+                'ensalada': data.get('ensalada'),
+                'jugo': data.get('jugo'),
+                'postre': data.get('postre'),
+                'postre_nombre': data.get('postre_nombre'),
+                'nombres': nombres_combinados
             })
-            
             # --- PUNTO 2: ORDENAR POR FECHA ---
             resumen.sort(key=lambda x: x['fecha']) 
             
@@ -265,7 +270,12 @@ def eliminar_receta_resumen(request, index):
         request.session.modified = True
     return JsonResponse({'status': 'ok', 'recetas': resumen})
 
-
+def limpiar_resumen_total(request):
+    """Vacía por completo el listado de recetas acumuladas en la sesión."""
+    if 'resumen_recetas' in request.session:
+        del request.session['resumen_recetas']
+        request.session.modified = True
+    return JsonResponse({'status': 'ok'})
 
 
 def login_view(request):
@@ -496,30 +506,70 @@ def generar_informe_pdf(request):
     if not resumen_sesion:
         return HttpResponse("No hay datos en la sesión.", status=400)
 
-    # 1. Siempre ordenamos por fecha para que el agrupamiento funcione
-    resumen_sesion.sort(key=lambda x: x['fecha'])
+    ids_extras = {'ensalada': 143, 'jugo': 146, 'fruta': 147, 'flan': 145, 'jalea': 144}
 
-    if tipo_reporte == 'total':
+    if tipo_reporte == 'general':
+        # --- NUEVO: RESUMEN TOTAL GENERAL (TODOS LOS DÍAS JUNTOS) ---
+        totales_absolutos = {}
+        
+        for reg in resumen_sesion:
+            ids_a_calcular = list(filter(None, [reg.get('receta_id'), reg.get('receta_dos_id')]))
+            if reg.get('ensalada'): ids_a_calcular.append(ids_extras['ensalada'])
+            if reg.get('jugo'): ids_a_calcular.append(ids_extras['jugo'])
+            if reg.get('postre') in ids_extras: ids_a_calcular.append(ids_extras[reg['postre']])
+
+            for r_id in ids_a_calcular:
+                ingredientes = obtener_calculo_receta(r_id, reg['comensales'])
+                if ingredientes:
+                    for ing in ingredientes:
+                        llave = (ing['ingrediente'], ing['unidad'])
+                        # Sumamos directamente al diccionario global
+                        valor = float(ing['cantidad_total'].replace('.', '').replace(',', '.'))
+                        totales_absolutos[llave] = totales_absolutos.get(llave, 0) + valor
+
+        # Formateamos para el PDF
+        lista_final = []
+        for (nombre, unidad), total in totales_absolutos.items():
+            cant_fmt, uni_fmt = formatear_cantidad_inteligente(total, unidad)
+            lista_final.append({'nombre': nombre, 'cantidad': cant_fmt, 'unidad': uni_fmt})
+
+        return render_to_pdf('reporte_total_general_pdf.html', {
+            'ingredientes': sorted(lista_final, key=lambda x: x['nombre']),
+            'fecha_actual': datetime.now().strftime("%d/%m/%Y")
+        })
+
+    elif tipo_reporte == 'total':
         # --- RESUMEN TOTAL: AGRUPADO POR DÍA ---
         reporte_final_por_dia = []
         from itertools import groupby
         
-        for fecha, registros in groupby(resumen_sesion, key=lambda x: x['fecha']):
+        # Agrupamos todas las recetas que pertenecen al mismo día
+        for fecha, grupo_registros in groupby(resumen_sesion, key=lambda x: x['fecha']):
             totales_del_dia = {}
-            for reg in registros:
-                # Procesamos receta principal y acompañamiento
-                for r_id in [reg['receta_id'], reg.get('receta_dos_id')]:
-                    if r_id:
-                        # Usamos la función que ya arreglamos en utils.py
-                        ingredientes_calculados = obtener_calculo_receta(r_id, reg['comensales'])
-                        if ingredientes_calculados:
-                            for ing in ingredientes_calculados:
-                                llave = (ing['ingrediente'], ing['unidad'])
-                                # Quitamos formato (. y ,) para sumar el número puro
-                                valor_limpio = float(ing['cantidad_total'].replace('.', '').replace(',', '.'))
-                                totales_del_dia[llave] = totales_del_dia.get(llave, 0) + valor_limpio
+            registros = list(grupo_registros) # Convertimos el iterador a lista
 
-            # Formateamos los resultados de este día
+            for reg in registros:
+                # Recopilamos todos los IDs a calcular en esta fila (recetas + extras)
+                ids_a_calcular = list(filter(None, [reg.get('receta_id'), reg.get('receta_dos_id')]))
+                
+                if reg.get('ensalada'): ids_a_calcular.append(ids_extras['ensalada'])
+                if reg.get('jugo'): ids_a_calcular.append(ids_extras['jugo'])
+                
+                tipo_postre = reg.get('postre')
+                if tipo_postre in ids_extras:
+                    ids_a_calcular.append(ids_extras[tipo_postre])
+
+                # Calculamos y sumamos al diccionario del día
+                for r_id in ids_a_calcular:
+                    ingredientes_calculados = obtener_calculo_receta(r_id, reg['comensales'])
+                    if ingredientes_calculados:
+                        for ing in ingredientes_calculados:
+                            llave = (ing['ingrediente'], ing['unidad'])
+                            # Limpiamos el formato para poder sumar matemáticamente
+                            valor_limpio = float(ing['cantidad_total'].replace('.', '').replace(',', '.'))
+                            totales_del_dia[llave] = totales_del_dia.get(llave, 0) + valor_limpio
+
+            # Una vez procesadas todas las recetas del día, formateamos la lista para el PDF
             lista_formateada = []
             for (nombre, unidad), total in totales_del_dia.items():
                 cant_fmt, uni_fmt = formatear_cantidad_inteligente(total, unidad)
@@ -536,16 +586,25 @@ def generar_informe_pdf(request):
         })
 
     else:
-        # --- RESUMEN POR RECETA: (Ya mencionaste que funciona bien) ---
+        # --- RESUMEN POR RECETA (DETALLE) ---
         reporte_detalle = []
+
         for item in resumen_sesion:
-            ing_1 = obtener_calculo_receta(item['receta_id'], item['comensales']) or []
-            ing_2 = obtener_calculo_receta(item['receta_dos_id'], item['comensales']) or []
+            lista_ids = [item.get('receta_id'), item.get('receta_dos_id')]
+            if item.get('ensalada'): lista_ids.append(ids_extras['ensalada'])
+            if item.get('jugo'): lista_ids.append(ids_extras['jugo'])
+            if item.get('postre') in ids_extras: lista_ids.append(ids_extras[item['postre']])
+
+            ingredientes_totales = []
+            for r_id in lista_ids:
+                if r_id:
+                    ingredientes_totales += (obtener_calculo_receta(r_id, item['comensales']) or [])
+            
             reporte_detalle.append({
                 'fecha': item['fecha'],
                 'nombres': item['nombres'],
                 'comensales': item['comensales'],
-                'ingredientes': ing_1 + ing_2
+                'ingredientes': ingredientes_totales
             })
 
         return render_to_pdf('reporte_detalle_pdf.html', {

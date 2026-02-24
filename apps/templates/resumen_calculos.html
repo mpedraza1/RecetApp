@@ -34,10 +34,12 @@
         <div class="col-12 col-md-4">
           <label class="form-label"><strong>Tipo de Comida:</strong></label>
           <select id="tipoComida" class="form-select" name="tipo_comida">
-            <option value="">Seleccione una opción</option>
-            {% for tipo in tipos_comida %}
-            <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
-            {% endfor %}
+              <option value="">Seleccione una opción</option>
+              {% for tipo in tipos_comida %}
+                  {% if tipo.nombre != "Complementos" %}
+                      <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+                  {% endif %}
+              {% endfor %}
           </select>
         </div>
 
@@ -63,7 +65,9 @@
           >
             <option value="">Seleccione una opción</option>
             {% for tipo in tipos_comida %}
-            <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+              {% if tipo.nombre != "Complementos" %}
+              <option value="{{ tipo.id_tipo_comida }}">{{ tipo.nombre }}</option>
+              {% endif %}
             {% endfor %}
           </select>
         </div>
@@ -75,9 +79,41 @@
           </select>
         </div>
       </div>
+      <!-- ===================================================== -->
+      <!-- FILA 4: COMPLEMENTOS (Jugo, Ensalada,Postre) -->
+      <!-- ===================================================== -->      
+      <div id="panelComplementos" class="card mt-3 shadow-sm border-purple" style="display: none; border-left: 5px solid #8a2be2;">
+          <div class="card-body bg-light">
+              <h6 class="card-title" style="color: #8a2be2;"><i class="bi bi-plus-circle-fill"></i> Complementos del Menú</h6>
+              <div class="row g-3 align-items-center">
+                  <div class="col-12 col-md-4 d-flex gap-3">
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="checkEnsalada">
+                          <label class="form-check-label">Ensalada</label>
+                      </div>
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="checkJugo">
+                          <label class="form-check-label">Jugo</label>
+                      </div>
+                  </div>
+                  <div class="col-12 col-md-8">
+                      <div class="input-group input-group-sm">
+                          <span class="input-group-text">Postre:</span>
+                            <select id="selectPostre" class="form-select">
+                                <option value="">-- Sin Postre --</option> 
+                                <option value="fruta">Fruta</option>
+                                <option value="flan">Flan</option>
+                                <option value="jalea">Jalea</option>
+                            </select>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
 
       <!-- ===================================================== -->
-      <!-- FILA 4: BOTONES CALCULAR / AGREGAR -->
+      <!-- FILA 5: BOTONES CALCULAR / AGREGAR -->
       <!-- ===================================================== -->
       <div class="row g-3 justify-content-center mt-3">
         <div class="col-6 col-md-3 d-grid">
@@ -101,15 +137,25 @@
       <!-- ===================================================== -->
       <!-- FILA 5: BOTÓN INFORME -->
       <!-- ===================================================== -->
-  <div class="row g-3 justify-content-center mt-4">
-      <div class="col-6 col-md-4 d-grid">
+  <div class="row g-3 justify-content-center mt-3">
+      <div class="col-12 col-md-3 d-grid">
           <button type="button" id="btn-informe-receta" class="btn btn-info">
               <i class="bi bi-journal-text"></i> Resumen por Receta
           </button>
       </div>
-      <div class="col-6 col-md-4 d-grid">
+      <div class="col-12 col-md-3 d-grid">
           <button type="button" id="btn-informe-total" class="btn btn-success">
-              <i class="bi bi- calculator"></i> Resumen Total
+              <i class="bi bi-calculator"></i> Resumen Total por Día
+          </button>
+      </div>
+      <div class="col-12 col-md-3 d-grid">
+          <button type="button" id="btn-informe-general" class="btn btn-dark">
+              <i class="bi bi-list-check"></i> Resumen General 
+          </button>
+      </div>
+      <div class="col-12 col-md-3 d-grid">
+          <button type="button" id="btn-limpiar-todo" class="btn btn-danger">
+              <i class="bi bi-trash3"></i> Limpiar Informe
           </button>
       </div>
   </div>
@@ -162,16 +208,17 @@
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     // =========================================================
-    // 1. CONFIGURACIÓN DE IDs (¡REVISA ESTO CON TU BASE DE DATOS!)
+    // 1. CONFIGURACIÓN DE IDs 
     // =========================================================
     const ID_PROTEINA = 2; // Ejemplo: Almuerzo - Proteina
     const ID_GUARNICION = 3; // Ejemplo: Almuerzo - Acompañamiento
-    const ID_COMPUESTO = 5; // Ejemplo: Almuerzo - Completo
+    const ID_COMPUESTO = 4; // Ejemplo: Almuerzo - Completo
     const ID_DESAYUNO_ONCE = 1;
+    const IDs_DESAYUNO_COMPUESTO = [1,2,3,4,5,6,7,8];
     
 
     // IDs que bloquean totalmente la segunda fila
-    const dashabilitados = [4, ID_COMPUESTO];
+    const dashabilitados = [ID_COMPUESTO];
 
     // =========================================================
     // 2. SELECTORES
@@ -191,7 +238,14 @@
     const tbody = document.getElementById("tbodyIngredientes");
 
     // =========================================================
-    // 3. FUNCIÓN DE MENSAJE AMIGABLE (MEJORADA)
+    // 3. FUNCIONES DE APOYO 
+    // =========================================================
+    const borrarCalculoVisual = () => {
+        if (tbody) tbody.innerHTML = "";
+        if (seccionIngredientes) seccionIngredientes.style.display = "none";
+    };
+    // =========================================================
+    // 4. FUNCIÓN DE MENSAJE AMIGABLE (MEJORADA)
     // =========================================================
     const toggleMensajeAyuda = (mostrar) => {
       let msg = document.getElementById("msg-ayuda-fila2");
@@ -223,8 +277,8 @@
       }
     };
 
-    // =========================================================
-    // 4. LÓGICA PRINCIPAL (Cambio en Fila 1)
+// =========================================================
+    // 5. LÓGICA PRINCIPAL (Cambio en Fila 1)
     // =========================================================
     if (selectTipo) {
       selectTipo.addEventListener("change", function () {
@@ -245,46 +299,26 @@
           return;
         }
 
-        // B. Decisión: ¿Bloquear o Habilitar?
+        // B. Decisión: ¿Bloquear o Habilitar Fila 2?
         if (dashabilitados.includes(tipoId)) {
-          // CASO 1: Bloqueado (Compuesto)
           selectTipo2.disabled = true;
           selectReceta2.disabled = true;
-
-          // Mostrar mensaje centrado abajo
           toggleMensajeAyuda(true);
         } else {
-          // CASO 2: Habilitado (Proteína/Guarnición)
-          toggleMensajeAyuda(false); // Ocultar mensaje
-
+          toggleMensajeAyuda(false);
           selectTipo2.disabled = false;
           selectReceta2.disabled = false;
 
-          // Reset visual (mostrar todo)
-          Array.from(selectTipo2.options).forEach(
-            (option) => (option.hidden = false)
-          );
-
-          // Filtro Cruzado
-          if (tipoId === ID_PROTEINA) {
-            Array.from(selectTipo2.options).forEach((option) => {
-              if (option.value != ID_GUARNICION && option.value != "")
-                option.hidden = true;
-            });
-          } else if (tipoId === ID_GUARNICION) {
-            Array.from(selectTipo2.options).forEach((option) => {
-              if (option.value != ID_PROTEINA && option.value != "")
-                option.hidden = true;
-            });
-          } else if (tipoId === ID_DESAYUNO_ONCE) {
-            Array.from(selectTipo2.options).forEach((option) => {
-              if (option.value != ID_DESAYUNO_ONCE && option.value != "")
-                option.hidden = true;
-            });
-          }
+          // Filtro Cruzado para Fila 2
+          Array.from(selectTipo2.options).forEach((option) => {
+            option.hidden = false;
+            if (tipoId === ID_PROTEINA && option.value != ID_GUARNICION && option.value != "") option.hidden = true;
+            else if (tipoId === ID_GUARNICION && option.value != ID_PROTEINA && option.value != "") option.hidden = true;
+            else if (tipoId === ID_DESAYUNO_ONCE && option.value != ID_DESAYUNO_ONCE && option.value != "") option.hidden = true;
+          });
         }
 
-        // C. Cargar recetas Fila 1
+        // C. Cargar recetas Fila 1 (DEBE ESTAR DENTRO DEL LISTENER)
         fetch(`/recetas-por-tipo/${tipoId}/`)
           .then((r) => r.json())
           .then((data) => {
@@ -298,7 +332,44 @@
     }
 
     // =========================================================
-    // 5. LÓGICA DE CARGA RECETAS FILA 2 (Sin cambios)
+    // 6. LÓGICA DE COMPLEMENTOS (Solo al elegir la receta)
+    // =========================================================
+    if (selectReceta) {
+      selectReceta.addEventListener("change", function () {
+        const tipoId = parseInt(selectTipo.value);
+        const recetaId = parseInt(this.value); 
+        const panel = document.getElementById("panelComplementos");
+        
+        // IDs que habilitan complementos (Proteína, Guarnición, Compuesto)
+        const IDs_ALMUERZO_CENA = [ID_PROTEINA, ID_GUARNICION, ID_COMPUESTO];
+
+        if (recetaId && IDs_ALMUERZO_CENA.includes(tipoId)) {
+            panel.style.display = "block";
+        } else {
+            panel.style.display = "none";
+            document.getElementById("checkEnsalada").checked = false;
+            document.getElementById("checkJugo").checked = false;
+            document.getElementById("selectPostre").value = "";
+        }
+        if (tipoId === ID_DESAYUNO_ONCE && IDs_DESAYUNO_COMPUESTO.includes(recetaId)) {
+            // Deshabilitamos la Fila 2 por completo
+            selectTipo2.disabled = true;
+            selectReceta2.disabled = true;
+            selectTipo2.value = "";
+            selectReceta2.innerHTML = '<option value="">Seleccione una receta</option>';
+            
+            // Mostramos el cartel de "Menú completo" que ya tienes configurado
+            toggleMensajeAyuda(true); 
+        } else if (tipoId === ID_DESAYUNO_ONCE) {
+            // Si es desayuno pero NO es compuesto, rehabilitamos la Fila 2
+            selectTipo2.disabled = false;
+            selectReceta2.disabled = false;
+            toggleMensajeAyuda(false);
+        }
+      });
+    }
+    // =========================================================
+    // 7. LÓGICA DE CARGA RECETAS FILA 2 (Sin cambios)
     // =========================================================
     if (selectTipo2) {
       selectTipo2.addEventListener("change", function () {
@@ -314,16 +385,28 @@
           .then((r) => r.json())
           .then((data) => {
             selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+            
             data.forEach((r) => {
+              // VALIDACIÓN: Si estamos en Desayuno/Once, filtramos las recetas compuestas
+              // para que no aparezcan como "segundo plato"
+              const esTipoDesayuno = parseInt(tipoId) === ID_DESAYUNO_ONCE;
+              const esRecetaCompuesta = IDs_DESAYUNO_COMPUESTO.includes(parseInt(r.id_receta));
+
+              if (esTipoDesayuno && esRecetaCompuesta) {
+                  // Si es un desayuno compuesto, lo saltamos (no lo agregamos al select)
+                  return; 
+              }
+
+              // Si pasa el filtro, la agregamos normalmente
               selectReceta2.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
             });
           })
-          .catch((e) => console.error(e));
+          .catch((e) => console.error("Error cargando recetas 2:", e));
       });
     }
 
     // =========================================================
-    // 6. BOTÓN CALCULAR (Tabla)
+    // 8. BOTÓN CALCULAR (Tabla)
     // =========================================================
     if (botonCalcular) {
       botonCalcular.addEventListener("click", function () {
@@ -335,7 +418,7 @@
           alert("Por favor, seleccione al menos la primera receta.");
           return;
         }
-
+        
         const payload = {
           receta_id: selectReceta.value,
           comensales: inputComensales.value || 1,
@@ -347,6 +430,9 @@
             !selectTipo2.disabled && selectTipo2.value
               ? selectTipo2.value
               : null,
+          ensalada: document.getElementById("checkEnsalada").checked,
+          jugo: document.getElementById("checkJugo").checked,
+          postre: document.getElementById("selectPostre").value
         };
 
         fetch(`/calcular-por-tipo/`, {
@@ -386,10 +472,12 @@
     }
 
     // =========================================================
-    // 7. BOTÓN INFORME (PDF desde Sesión)
+    // 9. BOTÓN INFORME (PDF desde Sesión)
     // =========================================================
     const btnInformeReceta = document.getElementById("btn-informe-receta");
     const btnInformeTotal = document.getElementById("btn-informe-total");
+    const btnInformeGeneral = document.getElementById("btn-informe-general");
+    const btnLimpiarTodo = document.getElementById("btn-limpiar-todo");
 
     if (btnInformeReceta) {
         btnInformeReceta.addEventListener("click", () => {
@@ -402,8 +490,36 @@
             window.open('/generar-informe/?tipo=total', '_blank');
         });
     }
+
+    if (btnInformeGeneral) {
+        btnInformeGeneral.addEventListener("click", () => {
+            window.open('/generar-informe/?tipo=general', '_blank');
+        });
+    }
+
+    if (btnLimpiarTodo) {
+      btnLimpiarTodo.addEventListener("click", function() {
+        if (confirm("¿Estás seguro de que deseas borrar todas las recetas del informe actual?")) {
+            // 1. Limpiamos la sesión en el servidor
+            fetch('/limpiar-resumen-total/') 
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'ok') {
+                        // 2. Limpiamos todo lo visual
+                        borrarCalculoVisual(); // Oculta ingredientes calculados
+                        actualizarTablaResumen([]); // Vacía la tabla de abajo
+                        
+                        // 3. Reset de los selectores principales
+                        selectTipo.value = "";
+                        selectReceta.innerHTML = '<option value="">Seleccione una receta</option>';
+                        alert("Informe limpiado correctamente.");
+                    }
+                });
+            }
+        });
+    }
     // =========================================================
-    // 8. LÓGICA PARA AGREGAR RECETAS AL RESUMEN (SESIÓN)
+    // 10. LÓGICA PARA AGREGAR RECETAS AL RESUMEN (SESIÓN)
     // =========================================================
     const btnAgregar = document.getElementById("btn-agregar");
     const seccionAcumulados = document.getElementById("seccionAcumulados");
@@ -435,10 +551,16 @@
             }
 
             // Dibujamos la fila normal de la receta
+            let detalleRecetas = item.nombres;
+            if (item.ensalada) detalleRecetas += " <br>+ <small class='text-muted'>Ensalada</small>";
+            if (item.jugo) detalleRecetas += " <br>+ <small class='text-muted'>Jugo</small>";
+            if (item.postre && item.postre !== "") {
+                detalleRecetas += ` <br>+ <small class='text-muted'>Postre (${item.postre_nombre || item.postre})</small>`;
+            }
             const fila = document.createElement("tr");
             fila.innerHTML = `
                 <td>${item.fecha}</td>
-                <td class="text-start">${item.nombres}</td>
+                <td class="text-start">${detalleRecetas}</td>
                 <td>${item.comensales}</td>
                 <td>
                     <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarDelResumen(${index})">
@@ -470,25 +592,33 @@
                 alert("Selecciona una receta antes de agregarla al informe.");
                 return;
             }
+        const postreSelect = document.getElementById("selectPostre");
+        // SEGURIDAD: Validamos que existan opciones seleccionadas antes de sacar el texto
+        const nombre1 = selectReceta.selectedIndex >= 0 ? selectReceta.options[selectReceta.selectedIndex].text : "";
+        const nombre2 = selectReceta2.selectedIndex >= 0 ? selectReceta2.options[selectReceta2.selectedIndex].text : "";
+        const postreTexto = postreSelect.selectedIndex >= 0 ? postreSelect.options[postreSelect.selectedIndex].text : "";
+        
+        const payload = {
+            fecha: inputFecha.value || new Date().toISOString().split('T')[0],
+            comensales: inputComensales.value || 1,
+            receta_id: selectReceta.value,
+            receta_dos_id: (!selectReceta2.disabled && selectReceta2.value) ? selectReceta2.value : null,
+            ensalada: document.getElementById("checkEnsalada").checked,
+            jugo: document.getElementById("checkJugo").checked,
+            postre: postreSelect.value,
+            postre_nombre: (postreSelect.value && postreSelect.value !== "") ? postreTexto : null,
+            nombre1: nombre1,
+            nombre2: (nombre2 !== "Seleccione una receta") ? nombre2 : null
+        };
 
-            const payload = {
-                fecha: inputFecha.value || new Date().toISOString().split('T')[0],
-                comensales: inputComensales.value || 1,
-                receta_id: selectReceta.value,
-                receta_dos_id: (!selectReceta2.disabled && selectReceta2.value) ? selectReceta2.value : null,
-                // Enviamos los nombres para que la tabla se vea bien de inmediato
-                nombre1: selectReceta.options[selectReceta.selectedIndex].text,
-                nombre2: selectReceta2.options[selectReceta2.selectedIndex]?.text
-            };
-
-            fetch('/agregar-al-resumen/', {
-                method: "POST",
-                body: JSON.stringify(payload),
-                headers: {
-                    "Content-Type": "application/json",
-                    "X-CSRFToken": csrfToken,
-                },
-            })
+        fetch('/agregar-al-resumen/', {
+            method: "POST",
+            body: JSON.stringify(payload),
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": csrfToken,
+            },
+        })
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'ok') {
@@ -499,7 +629,10 @@
                     toggleMensajeAyuda(false);
                 }
             })
-            .catch(error => console.error("Error al agregar:", error));
+            .catch(error => {
+                console.error("Error al agregar:", error);
+                alert("Hubo un problema al guardar en el informe. Revisa la consola (F12).");
+            });
         });
     }
 
