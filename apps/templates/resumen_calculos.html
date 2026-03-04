@@ -95,6 +95,14 @@
                           <input class="form-check-input" type="checkbox" id="checkJugo">
                           <label class="form-check-label">Jugo</label>
                       </div>
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="checkSopa">
+                          <label class="form-check-label">Sopa</label>
+                      </div>
+                      <div class="form-check form-switch">
+                          <input class="form-check-input" type="checkbox" id="checkCrema">
+                          <label class="form-check-label">Crema</label>
+                      </div>
                   </div>
                   <div class="col-12 col-md-8">
                       <div class="input-group input-group-sm">
@@ -102,7 +110,7 @@
                             <select id="selectPostre" class="form-select">
                                 <option value="">-- Sin Postre --</option> 
                                 <option value="fruta">Fruta</option>
-                                <option value="flan">Flan</option>
+                                <option value="postre_leche">Postre de Leche</option>
                                 <option value="jalea">Jalea</option>
                             </select>
                       </div>
@@ -215,6 +223,9 @@
     const ID_COMPUESTO = 4; // Ejemplo: Almuerzo - Completo
     const ID_DESAYUNO_ONCE = 1;
     const IDs_DESAYUNO_COMPUESTO = [1,2,3,4,5,6,7,8];
+    const IDs_LACTEOS = [139, 140, 141, 142]; 
+    const ID_INFUSION_RECETA = 150;
+    const IDs_OCASIONALES = [10, 29, 30];
     
 
     // IDs que bloquean totalmente la segunda fila
@@ -332,7 +343,7 @@
     }
 
     // =========================================================
-    // 6. LÓGICA DE COMPLEMENTOS (Solo al elegir la receta)
+    // 6. LÓGICA AL ELEGIR RECETA 1 (Bloqueos y Complementos)
     // =========================================================
     if (selectReceta) {
       selectReceta.addEventListener("change", function () {
@@ -340,7 +351,7 @@
         const recetaId = parseInt(this.value); 
         const panel = document.getElementById("panelComplementos");
         
-        // IDs que habilitan complementos (Proteína, Guarnición, Compuesto)
+        // Lógica de Almuerzos/Cenas
         const IDs_ALMUERZO_CENA = [ID_PROTEINA, ID_GUARNICION, ID_COMPUESTO];
 
         if (recetaId && IDs_ALMUERZO_CENA.includes(tipoId)) {
@@ -349,62 +360,104 @@
             panel.style.display = "none";
             document.getElementById("checkEnsalada").checked = false;
             document.getElementById("checkJugo").checked = false;
+            document.getElementById("checkSopa").checked = false;
+            document.getElementById("checkCrema").checked = false;
             document.getElementById("selectPostre").value = "";
         }
-        if (tipoId === ID_DESAYUNO_ONCE && IDs_DESAYUNO_COMPUESTO.includes(recetaId)) {
-            // Deshabilitamos la Fila 2 por completo
-            selectTipo2.disabled = true;
-            selectReceta2.disabled = true;
-            selectTipo2.value = "";
-            selectReceta2.innerHTML = '<option value="">Seleccione una receta</option>';
-            
-            // Mostramos el cartel de "Menú completo" que ya tienes configurado
-            toggleMensajeAyuda(true); 
-        } else if (tipoId === ID_DESAYUNO_ONCE) {
-            // Si es desayuno pero NO es compuesto, rehabilitamos la Fila 2
-            selectTipo2.disabled = false;
-            selectReceta2.disabled = false;
-            toggleMensajeAyuda(false);
+        
+        //  LÓGICA PARA DESAYUNO / ONCE ---
+        if (tipoId === ID_DESAYUNO_ONCE) {
+            // REGLA 1: Si es un desayuno compuesto, deshabilitamos fila 2 por completo
+            if (IDs_DESAYUNO_COMPUESTO.includes(recetaId)) {
+                selectTipo2.value = "";
+                selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
+                selectTipo2.disabled = true;
+                selectReceta2.disabled = true;
+                toggleMensajeAyuda(true); 
+            } else {
+                // Habilitamos fila 2 para el resto de los casos y forzamos Tipo Desayuno
+                toggleMensajeAyuda(false);
+                selectTipo2.disabled = false;
+                selectReceta2.disabled = false;
+                selectTipo2.value = ID_DESAYUNO_ONCE;
+                
+                // Disparamos el filtrado de la Fila 2
+                selectTipo2.dispatchEvent(new Event('change'));
+            }
         }
       });
     }
     // =========================================================
-    // 7. LÓGICA DE CARGA RECETAS FILA 2 (Sin cambios)
+    // 7. LÓGICA DE CARGA RECETAS FILA 2 (CON AISLAMIENTO)
     // =========================================================
     if (selectTipo2) {
       selectTipo2.addEventListener("change", function () {
-        const tipoId = this.value;
+        const tipoId2 = parseInt(this.value); // Tipo de comida elegido en Fila 2
+        const receta1Id = parseInt(selectReceta.value); // Receta elegida en Fila 1
+
         selectReceta2.innerHTML = `<option value="">Cargando...</option>`;
 
-        if (!tipoId) {
+        if (!tipoId2) {
           selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
           return;
         }
 
-        fetch(`/recetas-por-tipo/${tipoId}/`)
+        fetch(`/recetas-por-tipo/${tipoId2}/`)
           .then((r) => r.json())
           .then((data) => {
             selectReceta2.innerHTML = `<option value="">Seleccione una receta</option>`;
             
-            data.forEach((r) => {
-              // VALIDACIÓN: Si estamos en Desayuno/Once, filtramos las recetas compuestas
-              // para que no aparezcan como "segundo plato"
-              const esTipoDesayuno = parseInt(tipoId) === ID_DESAYUNO_ONCE;
-              const esRecetaCompuesta = IDs_DESAYUNO_COMPUESTO.includes(parseInt(r.id_receta));
+            // --- PROTECCIÓN: Si NO es desayuno, mostramos todo (Almuerzos/Cenas) ---
+            if (tipoId2 !== ID_DESAYUNO_ONCE) {
+                data.forEach((r) => {
+                    selectReceta2.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
+                });
+                selectReceta2.disabled = false;
+                return;
+            }
 
-              if (esTipoDesayuno && esRecetaCompuesta) {
-                  // Si es un desayuno compuesto, lo saltamos (no lo agregamos al select)
-                  return; 
-              }
+            // --- FILTRADO ESTRICTO PARA DESAYUNOS ---
+            const filtradas = data.filter((r) => {
+                const rId = parseInt(r.id_receta);
 
-              // Si pasa el filtro, la agregamos normalmente
+                // REGLA 2: Receta 1 es LÁCTEO -> SOLO Desayunos NO compuestos (Simples)
+                if (IDs_LACTEOS.includes(receta1Id)) {
+                    return !IDs_LACTEOS.includes(rId) && 
+                          !IDs_DESAYUNO_COMPUESTO.includes(rId) && 
+                          !IDs_OCASIONALES.includes(rId) && 
+                          rId !== ID_INFUSION_RECETA;
+                }
+
+                // REGLA 3: Receta 1 es DESAYUNO SIMPLE -> SOLO Lácteos
+                const esSimple1 = !IDs_DESAYUNO_COMPUESTO.includes(receta1Id) && 
+                                  !IDs_LACTEOS.includes(receta1Id) && 
+                                  !IDs_OCASIONALES.includes(receta1Id) && 
+                                  receta1Id !== ID_INFUSION_RECETA;
+                if (esSimple1) {
+                    return IDs_LACTEOS.includes(rId);
+                }
+
+                // REGLA 4: Receta 1 es OCASIONAL -> SOLO Infusión (150)
+                if (IDs_OCASIONALES.includes(receta1Id)) {
+                    return rId === ID_INFUSION_RECETA;
+                }
+
+                // REGLA 5: Receta 1 es INFUSIÓN (150) -> SOLO Ocasionales
+                if (receta1Id === ID_INFUSION_RECETA) {
+                    return IDs_OCASIONALES.includes(rId);
+                }
+
+                return false;
+            });
+
+            filtradas.forEach((r) => {
               selectReceta2.innerHTML += `<option value="${r.id_receta}">${r.nombre}</option>`;
             });
+            selectReceta2.disabled = false;
           })
-          .catch((e) => console.error("Error cargando recetas 2:", e));
+          .catch((e) => console.error("Error filtrando fila 2:", e));
       });
     }
-
     // =========================================================
     // 8. BOTÓN CALCULAR (Tabla)
     // =========================================================
@@ -432,6 +485,8 @@
               : null,
           ensalada: document.getElementById("checkEnsalada").checked,
           jugo: document.getElementById("checkJugo").checked,
+          sopa: document.getElementById("checkSopa").checked,
+          crema: document.getElementById("checkCrema").checked,
           postre: document.getElementById("selectPostre").value
         };
 
@@ -554,6 +609,8 @@
             let detalleRecetas = item.nombres;
             if (item.ensalada) detalleRecetas += " <br>+ <small class='text-muted'>Ensalada</small>";
             if (item.jugo) detalleRecetas += " <br>+ <small class='text-muted'>Jugo</small>";
+            if (item.sopa) detalleRecetas += " <br>+ <small class='text-muted'>Sopa</small>";
+            if (item.crema) detalleRecetas += " <br>+ <small class='text-muted'>Crema</small>";
             if (item.postre && item.postre !== "") {
                 detalleRecetas += ` <br>+ <small class='text-muted'>Postre (${item.postre_nombre || item.postre})</small>`;
             }
@@ -605,6 +662,8 @@
             receta_dos_id: (!selectReceta2.disabled && selectReceta2.value) ? selectReceta2.value : null,
             ensalada: document.getElementById("checkEnsalada").checked,
             jugo: document.getElementById("checkJugo").checked,
+            sopa: document.getElementById("checkSopa").checked,
+            crema: document.getElementById("checkCrema").checked,
             postre: postreSelect.value,
             postre_nombre: (postreSelect.value && postreSelect.value !== "") ? postreTexto : null,
             nombre1: nombre1,

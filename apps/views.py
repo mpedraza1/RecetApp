@@ -202,9 +202,11 @@ def calcular_por_tipo(request):
         calculo_dos = obtener_calculo_receta(receta_dos_id, comensales) or []
 
         # 2. DEFINICIÓN DE EXTRAS
-        ids_postres = {"fruta": 147, "flan": 145, "jalea": 144} 
+        ids_postres = {"fruta": 147, "postre_leche": 145, "jalea": 144} 
         ID_ENSALADA = 143 
         ID_JUGO = 146 
+        ID_CREMA= 149
+        ID_SOPA= 148
         
         # 3. SUMAMOS EXTRAS SOLO SI LA LISTA PRINCIPAL ES VÁLIDA
         if data.get("ensalada"):
@@ -214,7 +216,14 @@ def calcular_por_tipo(request):
         if data.get("jugo"):
             extra = obtener_calculo_receta(ID_JUGO, comensales)
             if extra: calculo_uno.extend(extra)
-
+            
+        if data.get("sopa"):
+            extra = obtener_calculo_receta(ID_SOPA, comensales)
+            if extra: calculo_uno.extend(extra)
+        if data.get("crema"):
+            extra = obtener_calculo_receta(ID_CREMA, comensales)
+            if extra: calculo_uno.extend(extra)
+    
         postre_seleccionado = data.get("postre")
         if postre_seleccionado in ids_postres:
             extra = obtener_calculo_receta(ids_postres[postre_seleccionado], comensales)
@@ -244,6 +253,8 @@ def agregar_al_resumen(request):
                 'receta_dos_id': data.get('receta_dos_id'),
                 'ensalada': data.get('ensalada'),
                 'jugo': data.get('jugo'),
+                'sopa': data.get('sopa'),
+                'crema': data.get('crema'),
                 'postre': data.get('postre'),
                 'postre_nombre': data.get('postre_nombre'),
                 'nombres': nombres_combinados
@@ -506,7 +517,7 @@ def generar_informe_pdf(request):
     if not resumen_sesion:
         return HttpResponse("No hay datos en la sesión.", status=400)
 
-    ids_extras = {'ensalada': 143, 'jugo': 146, 'fruta': 147, 'flan': 145, 'jalea': 144}
+    ids_extras = {'ensalada': 143, 'jugo': 146, 'fruta': 147, 'postre_leche': 145, 'jalea': 144, 'sopa': 148, 'crema': 149}
 
     if tipo_reporte == 'general':
         # --- NUEVO: RESUMEN TOTAL GENERAL (TODOS LOS DÍAS JUNTOS) ---
@@ -516,6 +527,8 @@ def generar_informe_pdf(request):
             ids_a_calcular = list(filter(None, [reg.get('receta_id'), reg.get('receta_dos_id')]))
             if reg.get('ensalada'): ids_a_calcular.append(ids_extras['ensalada'])
             if reg.get('jugo'): ids_a_calcular.append(ids_extras['jugo'])
+            if reg.get('sopa'): ids_a_calcular.append(ids_extras['sopa'])
+            if reg.get('crema'): ids_a_calcular.append(ids_extras['crema'])
             if reg.get('postre') in ids_extras: ids_a_calcular.append(ids_extras[reg['postre']])
 
             for r_id in ids_a_calcular:
@@ -554,7 +567,8 @@ def generar_informe_pdf(request):
                 
                 if reg.get('ensalada'): ids_a_calcular.append(ids_extras['ensalada'])
                 if reg.get('jugo'): ids_a_calcular.append(ids_extras['jugo'])
-                
+                if reg.get('sopa'): ids_a_calcular.append(ids_extras['sopa'])
+                if reg.get('crema'): ids_a_calcular.append(ids_extras['crema'])
                 tipo_postre = reg.get('postre')
                 if tipo_postre in ids_extras:
                     ids_a_calcular.append(ids_extras[tipo_postre])
@@ -593,6 +607,8 @@ def generar_informe_pdf(request):
             lista_ids = [item.get('receta_id'), item.get('receta_dos_id')]
             if item.get('ensalada'): lista_ids.append(ids_extras['ensalada'])
             if item.get('jugo'): lista_ids.append(ids_extras['jugo'])
+            if item.get('sopa'): lista_ids.append(ids_extras['sopa'])
+            if item.get('crema'): lista_ids.append(ids_extras['crema'])
             if item.get('postre') in ids_extras: lista_ids.append(ids_extras[item['postre']])
 
             ingredientes_totales = []
