@@ -3,25 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        body { font-family: sans-serif; }
-        .dia-seccion { margin-top: 20px; border-bottom: 2px solid #8a2be2; background-color: #f8f9fa; padding: 5px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        @page {
+            size: letter;
+            margin: 1cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 0.5cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 1cm;
+            }
+        }
+        body { font-family: sans-serif; font-size: 16px; line-height: 1.1; }
+        h1 { text-align: center; font-size: 22px; margin-bottom: 10px; }
+        .dia-seccion { margin-top: 10px; border-bottom: 1px solid #8a2be2; background-color: #f0f0f0; padding: 3px; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }
+        th, td { border: 1px solid #666; padding: 2px 5px; text-align: left; }
+        th { background-color: #eee; }
+        #footerContent { text-align: right; font-size: 10px; }
     </style>
 </head>
 <body>
-    <h1 style="text-align: center;">RESUMEN TOTAL POR DÍA</h1>
+    <h1>RESUMEN TOTAL POR DÍA</h1>
     
     {% for dia in reporte_por_dia %}
-        <div class="dia-seccion">
-            <strong>DÍA: {{ dia.fecha }}</strong>
-        </div>
+        <div class="dia-seccion">DÍA: {{ dia.fecha }}</div>
         <table>
             <thead>
                 <tr>
-                    <th>Ingrediente</th>
-                    <th>Cantidad</th>
-                    <th>Unidad</th>
+                    <th width="60%">Ingrediente</th>
+                    <th width="20%">Cantidad</th>
+                    <th width="20%">Unidad</th>
                 </tr>
             </thead>
             <tbody>
@@ -36,5 +48,9 @@
         </table>
     {% endfor %}
 
+    <div id="footerContent">
+        Generado automáticamente por el sistema RecetApp - Fundación Coanil
+        Página <pdf:pagenumber> de <pdf:pagecount>
+    </div>
 </body>
 </html>

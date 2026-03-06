@@ -193,24 +193,37 @@
     </div>
   </div>
 
-  <div class="container mt-4" id="seccionAcumulados" style="display: none;">
+<div class="container mt-4" id="seccionAcumulados" style="display: none;">
     <hr />
-    <h4 class="mb-3 text-center" style="color: #8a2be2;">Resumen para el Informe</h4>
-    <div class="table-responsive">
-      <table class="table table-bordered align-middle text-center shadow-sm">
-        <thead class="table-dark">
-          <tr>
-            <th>Fecha</th>
-            <th>Recetas Seleccionadas</th>
-            <th>Comensales</th>
-            <th>Acción</th>
-          </tr>
-        </thead>
-        <tbody id="tbodyAcumulados">
-          </tbody>
-      </table>
+    
+    <div style="display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; margin-bottom: 1rem; width: 100%;">
+        
+        <div></div>
+
+        <h4 style="color: #8a2be2; margin: 0; text-align: center;">Resumen para el Informe</h4>
+
+        <div style="text-align: right;">
+            <a href="{% url 'generar_informe' %}?tipo=listado" target="_blank" 
+               style="background-color: #8a2be2; color: white; padding: 6px 14px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 13px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: inline-block;">
+                Descargar Listado (PDF)
+            </a>
+        </div>
+        
     </div>
-  </div>
+
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center shadow-sm">
+            <thead class="table-dark">
+                <tr>
+                    <th>Fecha</th>
+                    <th>Recetas Seleccionadas</th>
+                    <th>Comensales</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="tbodyAcumulados"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>

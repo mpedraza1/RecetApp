@@ -12,6 +12,7 @@ urlpatterns = [
     path('recuperar/nueva/', views.recuperar_b, name='recuperar_b'),
     path('gestion-recetas/', views.gestion_recetas, name='gestion_recetas'),
     path('gestion-recetas/<int:id_receta>/', views.gestion_recetas, name='gestion_recetas_edit'),
+    path('crear-ingrediente-ajax/', views.crear_ingrediente_ajax, name='crear_ingrediente_ajax'),
     path('limpiar-resumen-total/', views.limpiar_resumen_total, name='limpiar_resumen_total'),
     path('usuarios/', views.gestion_usuarios, name='usuarios'),
         # Rutas ocultas (Acciones)

@@ -75,51 +75,76 @@
 
         <br><br>
 
-        <strong>Ingresar ingredientes:</strong>
-        
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+            <strong>Ingresar ingredientes:</strong>
+            <button type="button" id="btn-abrir-modal" 
+                    style="background-color: #28a745; color: white; border: none; border-radius: 50%; width: 25px; height: 25px; cursor: pointer; font-weight: bold;">
+                +
+            </button>
+            <small style="color: #666;">(Añadir ingrediente nuevo al sistema)</small>
+        </div>
+
+        <div id="modal-ingrediente" style="display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+            <div style="background-color: white; margin: 15% auto; padding: 20px; border-radius: 8px; width: 300px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                <h3>Nuevo Ingrediente</h3>
+                <label>Nombre:</label>
+                <input type="text" id="nuevo-ing-nombre" style="width: 100%; margin-bottom: 10px; padding: 5px;">
+                <label>Unidad Base:</label>
+                <select id="nuevo-ing-unidad" style="width: 100%; margin-bottom: 15px; padding: 5px;">
+                    <option value="GR">Gramos (gr)</option>
+                    <option value="ML">Mililitros (ml)</option>
+                </select>
+                <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                    <button type="button" id="btn-cancelar-modal" style="background: #ccc; border: none; padding: 5px 10px; border-radius: 4px;">Cancelar</button>
+                    <button type="button" id="btn-guardar-ingrediente" style="background: #28a745; color: white; border: none; padding: 5px 10px; border-radius: 4px;">Guardar</button>
+                </div>
+            </div>
+        </div>
         <div id="ingredientes-container">
             {% if es_edicion %}
                 {% for ri in receta_ingredientes %}
-                <div class="ingrediente" style="margin-bottom: 10px;">
-                    <select class="ingrediente-select" name="ingrediente" style="width: auto;">
-                        <option value="" data-unidad="">Seleccione un ingrediente</option>
+                <div class="ingrediente" style="margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+                    <select name="ingrediente" class="ingrediente-select" style="width: 250px; padding: 10px; border-radius: 6px;">
+                        <option value="">Seleccione ingrediente</option>
                         {% for ing in ingredientes %}
-                            <option value="{{ ing.id_ingrediente }}" data-unidad="{{ ing.unidad_base }}"
-                                {% if ing.id_ingrediente == ri.id_ingrediente_id %}selected{% endif %}>
+                            <option value="{{ ing.id_ingrediente }}" 
+                                    data-unidad="{{ ing.unidad_base }}"
+                                    {% if ri.id_ingrediente_id == ing.id_ingrediente %}selected{% endif %}>
                                 {{ ing.nombre }}
                             </option>
                         {% endfor %}
                     </select>
-
-                    <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" 
-                           value="{{ ri.cantidad|stringformat:".2f" }}" placeholder="Cantidad">
-
-                    <input class="input-unidad" type="text" name="unidad" value="{{ ri.unidad }}" readonly 
-                           style="width: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center;">
                     
-                    <button type="button" class="boton-mas">+</button>
-                    <button type="button" class="boton-eliminar" style="color: white; background-color: #dc3545; border: none; border-radius: 4px; padding: 5px 10px; margin-left: 5px; cursor: pointer;">✕</button>
+                    <input type="number" step="any" name="cantidad" class="cantidad" 
+                           value="{{ ri.cantidad|stringformat:".2f" }}" placeholder="Cant." 
+                           style="width: 80px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    
+                    <input type="text" name="unidad" class="input-unidad" 
+                           value="{{ ri.unidad }}" readonly 
+                           style="width: 70px; background: #eee; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 6px;">
+
+                    <button type="button" class="boton-mas" style="background: #28a745; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;">+</button>
+                    <button type="button" class="boton-eliminar" style="background: #dc3545; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;">✕</button>
                 </div>
                 {% endfor %}
             {% else %}
-                <div class="ingrediente" style="margin-bottom: 10px;">
-                    <select class="ingrediente-select" name="ingrediente" style="width: auto;">
-                        <option value="" data-unidad="">Seleccione un ingrediente</option>
-                        {% for ingrediente in ingredientes %}
-                            <option value="{{ ingrediente.id_ingrediente }}" data-unidad="{{ ingrediente.unidad_base }}">
-                                {{ ingrediente.nombre }}
+                <div class="ingrediente" style="margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+                    <select name="ingrediente" class="ingrediente-select" style="width: 250px; padding: 10px; border-radius: 6px;">
+                        <option value="">Seleccione ingrediente</option>
+                        {% for ing in ingredientes %}
+                            <option value="{{ ing.id_ingrediente }}" data-unidad="{{ ing.unidad_base }}">
+                                {{ ing.nombre }}
                             </option>
                         {% endfor %}
                     </select>
-                    <input class="cantidad" type="number" step="0.01" min="0" name="cantidad" placeholder="Cantidad">
-                    <input class="input-unidad" type="text" name="unidad" readonly 
-                           style="width: 50px; background-color: #e9ecef; border: 1px solid #ced4da; text-align: center;" 
-                           placeholder="-">
-                    <button type="button" class="boton-mas">+</button>
+                    <input type="number" step="any" name="cantidad" class="cantidad" placeholder="Cant." 
+                           style="width: 80px; padding: 10px; border-radius: 6px; border: 1px solid #ccc;">
+                    <input type="text" name="unidad" class="input-unidad" readonly 
+                           style="width: 70px; background: #eee; border: 1px solid #ccc; padding: 10px; text-align: center; border-radius: 6px;">
+                    <button type="button" class="boton-mas" style="background: #28a745; color: white; border: none; border-radius: 4px; padding: 8px 12px; cursor: pointer;">+</button>
                 </div>
             {% endif %}
         </div>
-
         <br>
         <button class="guardar" type="submit">
             {% if es_edicion %}Actualizar Receta{% else %}Guardar Receta{% endif %}
@@ -238,6 +263,50 @@ document.addEventListener('DOMContentLoaded', function() {
             alert("Errores:\n" + errores.join("\n"));
         }
     });
+    // --- Lógica del Modal para Nuevo Ingrediente ---
+    const modal = document.getElementById('modal-ingrediente');
+    const btnAbrir = document.getElementById('btn-abrir-modal');
+    const btnCancelar = document.getElementById('btn-cancelar-modal');
+    const btnGuardar = document.getElementById('btn-guardar-ingrediente');
+
+    btnAbrir.onclick = () => modal.style.display = "block";
+    btnCancelar.onclick = () => modal.style.display = "none";
+
+    btnGuardar.onclick = function() {
+        const nombre = document.getElementById('nuevo-ing-nombre').value;
+        const unidad = document.getElementById('nuevo-ing-unidad').value;
+
+        if (!nombre) { alert("Escribe un nombre"); return; }
+
+        fetch('/crear-ingrediente-ajax/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({ nombre: nombre, unidad: unidad })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // 1. Agregar el nuevo ingrediente a TODOS los selectores de la página
+                const todosLosSelects = document.querySelectorAll('.ingrediente-select');
+                todosLosSelects.forEach(select => {
+                    const option = document.createElement('option');
+                    option.value = data.id;
+                    option.text = data.nombre;
+                    option.setAttribute('data-unidad', data.unidad);
+                    select.add(option);
+                });
+                
+                alert("Ingrediente creado y añadido a la lista.");
+                modal.style.display = "none";
+                document.getElementById('nuevo-ing-nombre').value = "";
+            } else {
+                alert("Error: " + data.message);
+            }
+        });
+    };
 });
 </script>
 {% endblock %}

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        @page { size: letter; margin: 1cm;
+            @frame footer { -pdf-frame-content: footerContent; bottom: 0.5cm; height: 1cm; }
+        }
+        body { font-family: sans-serif; font-size: 16px; line-height: 1.2; }
+        h1 { text-align: center; color: #8a2be2; font-size: 24px; }
+        .dia-separador { background-color: #f0f0f0; padding: 5px; margin-top: 15px; border-bottom: 2px solid #8a2be2; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        th, td { border: 1px solid #ccc; padding: 6px; text-align: left; }
+        th { background-color: #333; color: white; }
+        #footerContent { text-align: right; font-size: 10px; }
+    </style>
+</head>
+<body>
+    <h1>LISTADO DE PREPARACIONES</h1>
+    <p style="text-align: right;">Generado el: {{ fecha_actual }}</p>
+
+    {% regroup reporte by fecha as recetas_por_dia %}
+
+    {% for dia in recetas_por_dia %}
+        <div class="dia-separador">Preparaciones para el día: {{ dia.grouper }}</div>
+        <table>
+            <thead>
+                <tr>
+                    <th width="75%">Recetas Seleccionadas</th>
+                    <th width="25%">Comensales</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in dia.list %}
+                <tr>
+                    <td>
+                        <strong>{{ item.nombres }}</strong>
+                        <div style="font-size: 12px; color: #555; margin-left: 10px;">
+                            {% if item.ensalada %}+ Ensalada<br>{% endif %}
+                            {% if item.jugo %}+ Jugo<br>{% endif %}
+                            {% if item.postre_nombre %}+ Postre ({{ item.postre_nombre }}){% endif %}
+                        </div>
+                    </td>
+                    <td style="text-align: center;">{{ item.comensales }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endfor %}
+
+    <div id="footerContent">Página <pdf:pagenumber> de <pdf:pagecount></div>
+</body>
+</html>

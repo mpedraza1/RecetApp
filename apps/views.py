@@ -101,6 +101,32 @@ def gestion_recetas(request, id_receta=None):
     }
     return render(request, "creacion_recetas.html", context)
 
+@login_personalizado_required
+def crear_ingrediente_ajax(request):
+    if request.method == "POST":
+        try:
+            # Cargamos los datos enviados por JavaScript
+            data = json.loads(request.body)
+            nombre = data.get("nombre", "").strip()
+            unidad = data.get("unidad", "").strip()
+
+            if nombre and unidad:
+                # Creamos el ingrediente en la DB
+                nuevo_ing = Ingredientes.objects.create(
+                    nombre=nombre,
+                    unidad_base=unidad
+                )
+                return JsonResponse({
+                    "status": "success",
+                    "id": nuevo_ing.id_ingrediente,
+                    "nombre": nuevo_ing.nombre,
+                    "unidad": nuevo_ing.unidad_base
+                })
+            return JsonResponse({"status": "error", "message": "Datos incompletos"}, status=400)
+        except Exception as e:
+            return JsonResponse({"status": "error", "message": str(e)}, status=500)
+    return JsonResponse({"status": "error", "message": "Método no permitido"}, status=405)
+
 def recetas_por_tipo(request, id_tipo):
     # Agregamos 'estado=1' para que solo devuelva recetas activas
     recetas = Recetas.objects.filter(
@@ -598,6 +624,13 @@ def generar_informe_pdf(request):
             'reporte_por_dia': reporte_final_por_dia,
             'fecha_actual': datetime.now().strftime("%d/%m/%Y")
         })
+
+    if tipo_reporte == 'listado':
+            # Esta opción genera EXACTAMENTE lo que ves en la tabla de la imagen
+            return render_to_pdf('reporte_listado_pdf.html', {
+                'reporte': resumen_sesion,
+                'fecha_actual': datetime.now().strftime("%d/%m/%Y")
+            })
 
     else:
         # --- RESUMEN POR RECETA (DETALLE) ---

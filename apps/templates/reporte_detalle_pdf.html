@@ -3,25 +3,39 @@
 <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <style>
-        body { font-family: sans-serif; }
-        .dia-encabezado { background-color: #f0f0f0; padding: 5px; margin-top: 15px; border-bottom: 2px solid #8a2be2; }
+        @page {
+            size: letter;
+            margin: 1cm;
+            @frame footer {
+                -pdf-frame-content: footerContent;
+                bottom: 0.5cm;
+                margin-left: 1cm;
+                margin-right: 1cm;
+                height: 1cm;
+            }
+        }
+        body { font-family: sans-serif; font-size: 16px; }
+        h2 { text-align: center; font-size: 22px; margin-bottom: 10px; }
+        .dia-encabezado { background-color: #f0f0f0; padding: 3px; margin-top: 10px; border-bottom: 2px solid #8a2be2; font-weight: bold; }
+        .receta-bloque { margin-bottom: 8px; padding: 5px; border-bottom: 1px dashed #999; }
+        table { width: 100%; border-collapse: collapse; }
+        td { padding: 1px 5px; border-bottom: 0.5px solid #eee; }
+        #footerContent { text-align: right; font-size: 10px; }
     </style>
 </head>
 <body>
     <h2>RESUMEN POR PREPARACIÓN</h2>
-    <p>Generado el: {{ fecha_actual }}</p>
+    <p style="font-size: 12px;">Generado el: {{ fecha_actual }}</p>
 
     {% regroup reporte by fecha as recetas_por_dia %}
 
     {% for dia in recetas_por_dia %}
-        <div class="dia-encabezado">
-            <strong>DÍA: {{ dia.grouper }}</strong>
-        </div>
+        <div class="dia-encabezado">DÍA: {{ dia.grouper }}</div>
 
         {% for item in dia.list %}
-            <div style="margin-bottom: 15px; padding: 10px; border-bottom: 1px dashed #ccc;">
+            <div class="receta-bloque">
                 <strong>{{ item.nombres }} ({{ item.comensales }} pers.)</strong>
-                <table style="width: 100%;">
+                <table>
                     {% for ing in item.ingredientes %}
                     <tr>
                         <td width="70%">{{ ing.ingrediente }}</td>
@@ -33,6 +47,9 @@
         {% endfor %}
     {% endfor %}
 
-
+    <div id="footerContent">
+        Generado automáticamente por el sistema RecetApp - Fundación Coanil 
+        Página <pdf:pagenumber> de <pdf:pagecount>
+    </div>
 </body>
 </html>
