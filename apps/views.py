@@ -326,7 +326,7 @@ def login_view(request):
                 usuario = Usuarios.objects.get(correo=correo)
 
                 if usuario.estado != 1: 
-                    messages.error(request, "Tu usuario está inactivo. Contacta a RRHH.")
+                    messages.error(request, "Tu usuario está inactivo. Contacta a la Coordinadora de Nutrición.")
                     return redirect('login')
 
                 
@@ -380,7 +380,7 @@ def primer_ingreso_a(request):
                 
                 
                 if usuario.estado != 1:
-                    messages.error(request, "No estás autorizado (Usuario Inactivo).")
+                    messages.error(request, "No estás autorizado para ingresar.")
                     return redirect('primer_ingreso_a')
 
                 
@@ -426,7 +426,7 @@ def primer_ingreso_b(request):
 
     return render(request, 'registro/primer_ingreso_b.html', {'form': form})
 
-@login_personalizado_required
+
 def recuperar_a(request):
     if request.method == 'POST':
         form = ValidarCorreoForm(request.POST)
@@ -437,8 +437,8 @@ def recuperar_a(request):
                 
         
                 if usuario.estado != 1:
-                    messages.error(request, "Tu cuenta está inactiva. Contacta al administrador.")
-                    return redirect('recuperar_step1')
+                    messages.error(request, "Tu cuenta está inactiva. Contacta a la Coordinadora de Nutrición.")
+                    return redirect('recuperar_a')
 
                 request.session['recuperar_user_id'] = usuario.id_usuario
                 return redirect('recuperar_b')

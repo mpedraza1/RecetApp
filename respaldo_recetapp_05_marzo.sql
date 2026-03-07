@@ -2,7 +2,7 @@
 -- PostgreSQL database dump
 --
 
-\restrict uteZhdfwc7WrdmQhSHZkUH78DgFfWBex0tcH0PE60TQ9qjG6oeHSglim11T4989
+\restrict CztebkVmVfB5F1Mjjd1unXgZO654zv58sGRgpHZjStztHORqH48vlQpMm8BrfVy
 
 -- Dumped from database version 16.11 (Debian 16.11-1.pgdg13+1)
 -- Dumped by pg_dump version 16.11 (Debian 16.11-1.pgdg13+1)
@@ -746,6 +746,9 @@ imklusdrorvhpf4cr71r7liduf9wq3vs	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8x
 dilmht26zxjkz8j1kuzcf0j4pe7w3tk3	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vsvto:H9JRr9ianA0lqL3h6W3RfDM9iiRSkDzL0naTGAZ1E5c	2026-03-05 04:44:24.24499+00
 v5viq0ymbfssf18u6fvrbhs1324mc0si	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVka1AOmwFrQ:1vuk0F:YyUHF4dfASF9DMZ4YuhkQ8lQKq_3zRiLCWBB5bUmOsI	2026-03-10 04:26:31.931523+00
 jyuhbmeb9l9kgyq8f66aivs5bkblafxq	eyJ1c3VhcmlvX3RlbXBfaWQiOjI2fQ:1vvK6v:5y6HC3xOAHwDzPtRBC8BC4dU8iGmendzPPoxEiupcLE	2026-03-11 18:59:49.851649+00
+aoizfsnvddjhorigg5e4h5bm069artp2	.eJy91E9r6zAMAPCvInRNCmmb7k9uY3sPHhTeYMdtDM1RWw_HauV4h4599-G0axmEHXLILZJR7B-S_YExRFIrL7bGapqfQi_NqzJW-F8teYIlrSXgeV3FYTXLUTnEhv2LsuGWAlaPH7hisyGscFbMLibFfDItMUcjDftAjgNWOC0wlaaSbuMfiVrCMblI2a6KasJqRS5wjm9xLacgyPa8YpSbc7SV0HYE_P4-qXx0LsdDlM5zb_d7Ak9bcbZN3Az--VUM9ikWxWru8TMfxlr0uWbXI7F-GCCDv_RmU5OGasreLpUjaZZsNgx3HLo_1AQP1sOSTCshNeyePOwiB-ucwARaaajlwdR5r3S0eSQPRjw0rA2nzSCD3_hDmWXZw7y6Gkl5uyHdRWvIQ83wzlpHpQAZ3KrsYnpOUt7xOh4qBiIvFz3IcjES8sa9Hi9gbdcHkSH1DBn8OW4PpCr7waM67fEdTjHKqIpKK6EbV7Xs6_S-PH9-AcEbENw:1vxePs:ou0QnKNpoLTkth6UHhkWkHMv7618bdIBFN9tSrf6YFc	2026-03-18 05:05:00.042408+00
+vxn79520wcqwkvslyiwey5ce0dxxagyv	.eJzFkU9Lw0AQxb_KMldTyCaiuDdFPBX0rlLGzSSNbHbC_hGh5LvLJmlaKFLoQU-77w1vZn7MDqKP6FretBUomS3ScvfhCBQ8uxYtijU27OFQd2xAFRk48rEju3GkKaAH9bqDmvQWQUGRFzervFzJHDLQ3JH1aMinCqRkSoxzQcojp2I_ujYak8EYwgpBBRcpg8_Y8P7vuV987ahbRM8-jNvXLgaEvXGgepr9yUgrvaAPKB7YBo7fMGSXYNyeh6jR-IViFhPGLGaOWS0gpwxT5yMAdq6tGhL4RRYvJJDlKQLI8g7-iAGt0GxFR66jNExciTXpLYlH8mPX6hcyeY7s-j9vc59OIjTrtkqPFb15i3lOMqBlGN6HHx0uKfM:1vy9DG:vNKIE5SQRSAzo8TRRtOC6qArcSsa_OCwWDEVGBa0R-k	2026-03-19 13:58:02.783546+00
+nr77lwtwtkw56v3rs7vszqbtex6zmznc	.eJyNj8FqwzAQRH_FzFkByyWl6NZ7oLmnwWyldeIgS0GyTsH_XiwnViGU9rZvRyPp3ZBiotD7tjdQUqzo_PAVGAofoSdH1Y5OPqLkwVuoRiBwTAO7NrDmkSLU4YaO9Zmg0NTN66Z-2dQSAtoP7CJZjjnBXJ0r-WFsCxsf884lawVyhwxBdWQjC1zSya8Q_bUkOvBQ6OrjmAXwmNuH03LzQvNv9sl8prpm4yrDVRfSSJjEs4d8-9NDyh-b30zGkFaRZf6Px13Csj7zsxP2mWeB3f1EEXy_9KQ9puP0DZGVpOY:1vyKvF:pEQabF7wDmTWyhyAt--g_n0-wxKhFkIgOptf8761Tpc	2026-03-20 02:28:13.446898+00
 p9antn14r25inrrn9z5655opgqkeq8ue	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVkY6SkWpxaW5qXnxRanJqSWJxUpW0bG1ABg2Hls:1vsAtj:vKLBXUc9pvNNrV83iefFfmnXMwlZPCg2ifbNv6m7ubc	2026-03-03 02:33:11.183236+00
 u54xh6zx81ypnm2mflyxxt36s230r5fh	.eJyrViotLk0sysyPz0xRsjLSgXPz8nOTilKVrJScUvOyEnMz8xSCE3MSqxKLlBBqivJzlKwMawFNohhW:1vsXKo:GvgVLQDfop_6kn-Zm6GJjFp7oj6sO8--AnCO3sm78vI	2026-03-04 02:30:38.480185+00
 5tpkqbvxl5jhol2dy2ygfx711ov2u0c3	.eJyrViotLk0sysyPz0xRsjLUgXPz8nOTilKVrJT8izIT8xIVfBLT84uVEPJF-TlKVkY6SkWpxaW5qXnxRanJqSWJxUpW0bG1ABg2Hls:1vrlws:_ezDD-JWc77HN236qcJDvfpyd5bwyef4__nqjoXw_Io	2026-03-01 23:54:46.421391+00
@@ -846,11 +849,15 @@ COPY public.ingredientes (id_ingrediente, nombre, unidad_base) FROM stdin;
 87	Verdura de estación	gr
 88	Leche En Polvo 0% Mat. grasa	gr
 89	Leche En Polvo 0% Mat. grasa Sin Lactosa	gr
-90	Flan	gr
 91	Jalea Con Sucralosa	gr
 92	Refresco Con Sucralosa	gr
 93	Saborizante En Polvo	gr
 121	Fruta De Estación	gr
+122	Infusión	gr
+123	Sopa deshidratada	gr
+124	Crema deshidratada	gr
+90	Postre de Leche	gr
+125	Ecco	gr
 \.
 
 
@@ -1677,8 +1684,6 @@ COPY public.receta_ingredientes (id_receta_ingrediente, id_receta, id_ingredient
 708	131	28	13.00	gr
 724	106	28	13.00	gr
 731	107	28	33.00	gr
-873	138	8	30.00	gr
-874	138	32	20.00	gr
 878	142	33	20.00	gr
 879	142	93	5.00	gr
 880	139	88	20.00	gr
@@ -1687,14 +1692,20 @@ COPY public.receta_ingredientes (id_receta_ingrediente, id_receta, id_ingredient
 883	140	93	5.00	gr
 884	141	32	20.00	gr
 885	141	93	5.00	gr
-886	143	87	100.00	gr
-887	143	74	2.00	gr
-888	143	30	10.00	ml
-889	143	1	5.00	ml
 890	144	91	3.50	gr
 891	145	90	30.00	gr
 892	146	92	1.22	gr
 893	147	121	100.00	gr
+894	148	123	12.50	gr
+895	149	124	15.00	gr
+896	150	122	1.50	gr
+899	143	87	120.00	gr
+900	143	74	2.00	gr
+901	143	30	5.00	ml
+902	143	1	5.00	ml
+903	138	8	30.00	gr
+904	138	32	20.00	gr
+905	138	125	1.50	GR
 \.
 
 
@@ -1834,16 +1845,19 @@ COPY public.recetas (id_receta, nombre, id_tipo_comida, estado, created_at, upda
 129	Paella	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 130	Porotos con mazamorra	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
 131	Pantrucas	4	1	2025-11-16 22:48:57.262115	2025-11-16 22:48:57.262115
-138	Prueba 1	1	0	2026-02-17 02:03:24.818102	2026-02-17 02:25:50.921591
 142	Leche Entera	1	1	2026-02-19 02:50:13.05073	2026-02-19 02:50:13.050734
 139	Leche Descremada	1	1	2026-02-19 02:46:25.073544	2026-02-19 02:50:38.355702
 140	Leche Descremada Sin Lactosa	1	1	2026-02-19 02:47:06.968912	2026-02-19 02:51:01.94974
 141	Leche Semi Descremada	1	1	2026-02-19 02:47:49.167078	2026-02-19 02:51:23.207462
-143	Ensalada De Estación	5	1	2026-02-19 02:52:30.411486	2026-02-19 02:52:30.41149
 144	Jalea	5	1	2026-02-19 02:53:38.032222	2026-02-19 02:53:38.032225
-145	Flan	5	1	2026-02-19 02:54:02.720247	2026-02-19 02:54:02.720253
 146	Jugo	5	1	2026-02-19 02:54:31.291234	2026-02-19 02:54:31.291239
 147	Fruta de Estación	5	1	2026-02-19 02:57:21.467374	2026-02-19 02:57:21.467378
+145	Postre de Leche	5	1	2026-02-19 02:54:02.720247	2026-03-04 02:32:20.160187
+148	Sopa	5	1	2026-03-04 02:44:39.162986	2026-03-04 02:44:39.162989
+149	Crema	5	1	2026-03-04 02:45:45.685022	2026-03-04 02:45:45.685026
+150	Infusión	1	1	2026-03-04 02:46:20.000433	2026-03-04 02:46:20.000436
+143	Ensalada De Estación	5	1	2026-02-19 02:52:30.411486	2026-03-05 13:52:58.803199
+138	Prueba 1.1	1	1	2026-02-17 02:03:24.818102	2026-03-06 01:51:40.232916
 \.
 
 
@@ -1972,21 +1986,21 @@ SELECT pg_catalog.setval('public.django_migrations_id_seq', 20, true);
 -- Name: ingredientes_id_ingrediente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.ingredientes_id_ingrediente_seq', 121, true);
+SELECT pg_catalog.setval('public.ingredientes_id_ingrediente_seq', 125, true);
 
 
 --
 -- Name: receta_ingredientes_id_receta_ingrediente_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.receta_ingredientes_id_receta_ingrediente_seq', 893, true);
+SELECT pg_catalog.setval('public.receta_ingredientes_id_receta_ingrediente_seq', 905, true);
 
 
 --
 -- Name: recetas_id_receta_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
 --
 
-SELECT pg_catalog.setval('public.recetas_id_receta_seq', 147, true);
+SELECT pg_catalog.setval('public.recetas_id_receta_seq', 150, true);
 
 
 --
@@ -2437,5 +2451,5 @@ ALTER TABLE ONLY public.usuarios
 -- PostgreSQL database dump complete
 --
 
-\unrestrict uteZhdfwc7WrdmQhSHZkUH78DgFfWBex0tcH0PE60TQ9qjG6oeHSglim11T4989
+\unrestrict CztebkVmVfB5F1Mjjd1unXgZO654zv58sGRgpHZjStztHORqH48vlQpMm8BrfVy
 

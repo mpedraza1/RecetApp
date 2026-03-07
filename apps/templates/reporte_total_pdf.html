@@ -21,6 +21,14 @@
         th, td { border: 1px solid #666; padding: 2px 5px; text-align: left; }
         th { background-color: #eee; }
         #footerContent { text-align: right; font-size: 10px; }
+        .tabla-footer {
+        width: 100%;
+        border: none !important;
+        margin-top: 10px;
+        font-size: 10px; }
+        .col-izquierda { width: 20%; border: none !important; } 
+        .col-centro { width: 60%; text-align: center; border: none !important; } 
+        .col-derecha { width: 20%; text-align: right; border: none !important; }
     </style>
 </head>
 <body>
@@ -49,8 +57,19 @@
     {% endfor %}
 
     <div id="footerContent">
-        Generado automáticamente por el sistema RecetApp - Fundación Coanil
-        Página <pdf:pagenumber> de <pdf:pagecount>
+        <table class="tabla-footer">
+            <tr>
+                <td class="col-izquierda"></td>
+                
+                <td class="col-centro">
+                    <h4 style="margin: 0;">Generado automáticamente por el sistema RecetApp - Fundación Coanil</h4>
+                </td>
+                
+                <td class="col-derecha">
+                    Página <pdf:pagenumber> de <pdf:pagecount>
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>
